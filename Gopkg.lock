@@ -2,20 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:5338a2f4f8167d02fb1bc638732e55b39004497cd7c4ceebf0953b7820071f9a"
-  name = "github.com/on-prem-net/email-api"
-  packages = [
-    "agentstreamendpoint",
-    "agentstreamendpoint/emailproto",
-    "model",
-    "restendpoint",
-    "statik",
-  ]
-  pruneopts = "UT"
-  revision = "a838b8f2cce5c7d126e4846843a31460f8df267f"
-
-[[projects]]
   digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
@@ -183,11 +169,6 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/on-prem-net/email-api/agentstreamendpoint",
-    "github.com/on-prem-net/email-api/agentstreamendpoint/emailproto",
-    "github.com/on-prem-net/email-api/model",
-    "github.com/on-prem-net/email-api/restendpoint",
-    "github.com/on-prem-net/email-api/statik",
     "github.com/dgrijalva/jwt-go",
     "github.com/docktermj/go-logger/logger",
     "github.com/go-redis/redis",
