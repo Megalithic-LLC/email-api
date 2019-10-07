@@ -9,8 +9,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/docktermj/go-logger/logger"
-	"github.com/on-prem-net/email-api/model"
 	"github.com/go-redis/redis"
+	"github.com/on-prem-net/email-api/model"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -43,7 +43,7 @@ func (self *RestEndpoint) createToken(w http.ResponseWriter, req *http.Request) 
 	var credentials Credentials
 	if err := json.NewDecoder(req.Body).Decode(&credentials); err != nil {
 		logger.Errorf("Failed decoding credentials: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
+		sendBadRequestError(w, err)
 		return
 	}
 
@@ -52,16 +52,18 @@ func (self *RestEndpoint) createToken(w http.ResponseWriter, req *http.Request) 
 	var user model.User
 	if res := self.db.Where(filterBy).First(&user); res.RecordNotFound() {
 		logger.Warnf("No such user: %s", credentials.Username)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	} else if res.Error != nil {
 		logger.Errorf("Failed looking up user: %v", res.Error)
-		w.WriteHeader(http.StatusUnauthorized)
+		sendInternalServerError(w)
 		return
 	}
 
 	// Validate password
 	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(credentials.Password)); err != nil {
 		logger.Errorf("Wrong password attempt for user %s", user.Username)
-		w.WriteHeader(http.StatusUnauthorized)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -75,7 +77,7 @@ func (self *RestEndpoint) refreshToken(w http.ResponseWriter, req *http.Request)
 	credentials := map[string]string{}
 	if err := json.NewDecoder(req.Body).Decode(&credentials); err != nil {
 		logger.Errorf("Failed decoding credentials: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
+		sendBadRequestError(w, err)
 		return
 	}
 
@@ -87,13 +89,13 @@ func (self *RestEndpoint) refreshToken(w http.ResponseWriter, req *http.Request)
 			return
 		}
 		logger.Errorf("Failed looking up refresh token: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
+		sendInternalServerError(w)
 		return
 	}
 	refreshToken, err := parseTokenString(refreshTokenString)
 	if err != nil {
 		logger.Errorf("Failed parsing refresh token: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -102,9 +104,11 @@ func (self *RestEndpoint) refreshToken(w http.ResponseWriter, req *http.Request)
 	var user model.User
 	if res := self.db.Where(filterBy).First(&user); res.RecordNotFound() {
 		logger.Warnf("No such user: %s", refreshToken.UserID)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	} else if res.Error != nil {
 		logger.Errorf("Failed looking up user: %v", res.Error)
-		w.WriteHeader(http.StatusUnauthorized)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -116,7 +120,7 @@ func (self *RestEndpoint) generateAndStoreTokensThenRespond(userID, agentID stri
 	tokenString, err := self.generateTokenString(tokenTTL, userID, agentID)
 	if err != nil {
 		logger.Errorf("Failed signing token: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -124,7 +128,7 @@ func (self *RestEndpoint) generateAndStoreTokensThenRespond(userID, agentID stri
 	refreshTokenString, err := self.generateRefreshTokenString(refreshTokenTTL, fmt.Sprintf("%v", userID))
 	if err != nil {
 		logger.Errorf("Failed signing refresh token: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -134,7 +138,7 @@ func (self *RestEndpoint) generateAndStoreTokensThenRespond(userID, agentID stri
 	pipeline.Set(fmt.Sprintf("rtok:%v", refreshTokenString), "1", refreshTokenTTL)
 	if _, err := pipeline.Exec(); err != nil {
 		logger.Errorf("Failed storing tokens: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 

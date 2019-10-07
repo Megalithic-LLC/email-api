@@ -2,11 +2,12 @@ package restendpoint
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
-	"github.com/on-prem-net/email-api/model"
 	"github.com/docktermj/go-logger/logger"
 	"github.com/gorilla/mux"
+	"github.com/on-prem-net/email-api/model"
 	"github.com/rs/xid"
 )
 
@@ -20,25 +21,28 @@ func (self *RestEndpoint) createSnapshot(w http.ResponseWriter, req *http.Reques
 	var createSnapshotRequest createSnapshotRequestType
 	if err := json.NewDecoder(req.Body).Decode(&createSnapshotRequest); err != nil {
 		logger.Errorf("Failed decoding snapshot: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
+		sendBadRequestError(w, err)
 		return
 	}
 	snapshot := createSnapshotRequest.Snapshot
 
 	// Validate
-	if snapshot.AgentID == "" {
-		w.WriteHeader(http.StatusBadRequest)
+	if validationErrors, err := self.validateSnapshot(&snapshot); err != nil {
+		logger.Errorf("Failure validating snapshot: %v", err)
+		sendInternalServerError(w)
+		return
+	} else if len(validationErrors) > 0 {
+		sendErrors(w, validationErrors)
 		return
 	}
 
+	// Store
 	if snapshot.ID == "" {
 		snapshot.ID = xid.New().String()
 	}
-
-	// Store
 	if err := self.db.Create(&snapshot).Error; err != nil {
 		logger.Errorf("Failed creating new snapshot: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -70,7 +74,7 @@ func (self *RestEndpoint) getSnapshot(w http.ResponseWriter, req *http.Request) 
 			return
 		} else if res.Error != nil {
 			logger.Errorf("Failed finding snapshot: %v", res.Error)
-			w.WriteHeader(http.StatusInternalServerError)
+			sendInternalServerError(w)
 			return
 		}
 	}
@@ -93,7 +97,7 @@ func (self *RestEndpoint) getSnapshots(w http.ResponseWriter, req *http.Request)
 	res := self.db.Where(searchFor).Find(&snapshots)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all snapshots: %v", res.Error)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -104,4 +108,17 @@ func (self *RestEndpoint) getSnapshots(w http.ResponseWriter, req *http.Request)
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		logger.Errorf("Error encoding response: %v", err)
 	}
+}
+
+func (self *RestEndpoint) validateSnapshot(snapshot *model.Snapshot) ([]JsonApiError, error) {
+	errs := []JsonApiError{}
+	if snapshot.AgentID == "" {
+		err := JsonApiError{
+			Status: fmt.Sprintf("%d", http.StatusBadRequest),
+			Title:  "Validation Error",
+			Detail: "An agent id is required",
+		}
+		errs = append(errs, err)
+	}
+	return errs, nil
 }

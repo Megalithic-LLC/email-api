@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/docktermj/go-logger/logger"
-	"github.com/on-prem-net/email-api/model"
 	"github.com/gorilla/mux"
+	"github.com/on-prem-net/email-api/model"
 )
 
 func (self *RestEndpoint) getPlan(w http.ResponseWriter, req *http.Request) {
@@ -22,7 +22,7 @@ func (self *RestEndpoint) getPlan(w http.ResponseWriter, req *http.Request) {
 			return
 		} else if res.Error != nil {
 			logger.Errorf("Failed finding plan: %v", res.Error)
-			w.WriteHeader(http.StatusInternalServerError)
+			sendInternalServerError(w)
 			return
 		}
 	}
@@ -45,7 +45,7 @@ func (self *RestEndpoint) getPlans(w http.ResponseWriter, req *http.Request) {
 	res := self.db.Where(searchFor).Find(&plans)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all plans: %v", res.Error)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 

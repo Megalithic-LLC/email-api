@@ -7,9 +7,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/docktermj/go-logger/logger"
-	"github.com/on-prem-net/email-api/model"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/on-prem-net/email-api/model"
 )
 
 func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) {
@@ -22,7 +22,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 	var createAgentRequest createAgentRequestType
 	if err := json.NewDecoder(req.Body).Decode(&createAgentRequest); err != nil {
 		logger.Errorf("Failed decoding agent: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
+		sendBadRequestError(w, err)
 		return
 	}
 	agentID := createAgentRequest.Agent.ID
@@ -31,7 +31,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 	isMember, err := self.redisClient.SIsMember("unclaimed-agents", agentID).Result()
 	if err != nil {
 		logger.Errorf("Failed looking up unclaimed agent: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 	if !isMember {
@@ -45,7 +45,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 	tokenString, err := self.generateAgentTokenString(currentUserID, agentID)
 	if err != nil {
 		logger.Errorf("Failed generating token for agent: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -53,7 +53,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 	redisKey := fmt.Sprintf("tok:%v", tokenString)
 	if _, err := self.redisClient.Set(redisKey, "1", 0).Result(); err != nil {
 		logger.Errorf("Failed storing agent token: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -63,38 +63,24 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 		if _, err := self.redisClient.Del(redisKey).Result(); err != nil {
 			logger.Errorf("Failed deleting agent token: %v", err)
 		}
-		result := map[string]interface{}{
-			"errors": []JsonApiError{
-				JsonApiError{
-					Status: fmt.Sprintf("%v", http.StatusNotFound),
-					Title:  "Agent Connection Failed",
-					Detail: "Failed contacting agent; make sure it is running and connected to the internet",
-				},
+		sendErrors(w, []JsonApiError{
+			JsonApiError{
+				Status: fmt.Sprintf("%v", http.StatusNotFound),
+				Title:  "Agent Connection Failed",
+				Detail: "Failed contacting agent; make sure it is running and connected to the internet",
 			},
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		if err := json.NewEncoder(w).Encode(result); err != nil {
-			logger.Errorf("Error encoding response: %v", err)
-		}
+		})
 		return
 	}
 	if _, err := agentStream.SendClaimRequest(tokenString); err != nil {
 		logger.Errorf("Failed claiming agent: %v", err)
-		result := map[string]interface{}{
-			"errors": []JsonApiError{
-				JsonApiError{
-					Status: fmt.Sprintf("%v", http.StatusInternalServerError),
-					Title:  "Claim Agent Failed",
-					Detail: "Failed claiming agent; make sure it is running and connected to the internet",
-				},
+		sendErrors(w, []JsonApiError{
+			JsonApiError{
+				Status: fmt.Sprintf("%v", http.StatusInternalServerError),
+				Title:  "Claim Agent Failed",
+				Detail: "Failed claiming agent; make sure it is running and connected to the internet",
 			},
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		if err := json.NewEncoder(w).Encode(result); err != nil {
-			logger.Errorf("Error encoding response: %v", err)
-		}
+		})
 		return
 	}
 
@@ -105,7 +91,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 	}
 	if err := self.db.Create(&agent).Error; err != nil {
 		logger.Errorf("Failed creating new agent: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -136,7 +122,7 @@ func (self *RestEndpoint) getAgent(w http.ResponseWriter, req *http.Request) {
 		return
 	} else if res.Error != nil {
 		logger.Errorf("Failed finding agent: %v", res.Error)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 	if agent.OwnerUserID != context.Get(req, "currentUserID").(string) {
@@ -147,14 +133,14 @@ func (self *RestEndpoint) getAgent(w http.ResponseWriter, req *http.Request) {
 	// Load related service instances
 	if err := self.loadServiceInstances(&agent); err != nil {
 		logger.Errorf("Failed loading service instances for agent: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
 	// Load related snapshots
 	if err := self.loadSnapshots(&agent); err != nil {
 		logger.Errorf("Failed loading snapshots for agent: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -176,7 +162,7 @@ func (self *RestEndpoint) getAgents(w http.ResponseWriter, req *http.Request) {
 	res := self.db.Where(searchFor).Find(&agents)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all agents: %v", res.Error)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -184,7 +170,7 @@ func (self *RestEndpoint) getAgents(w http.ResponseWriter, req *http.Request) {
 	for _, agent := range agents {
 		if err := self.loadServiceInstances(agent); err != nil {
 			logger.Errorf("Failed loading service instances for agent: %v", res.Error)
-			w.WriteHeader(http.StatusInternalServerError)
+			sendInternalServerError(w)
 			return
 		}
 	}
@@ -193,7 +179,7 @@ func (self *RestEndpoint) getAgents(w http.ResponseWriter, req *http.Request) {
 	for _, agent := range agents {
 		if err := self.loadSnapshots(agent); err != nil {
 			logger.Errorf("Failed loading snapshots for agent: %v", res.Error)
-			w.WriteHeader(http.StatusInternalServerError)
+			sendInternalServerError(w)
 			return
 		}
 	}

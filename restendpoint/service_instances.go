@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/docktermj/go-logger/logger"
-	"github.com/on-prem-net/email-api/model"
 	"github.com/gorilla/mux"
+	"github.com/on-prem-net/email-api/model"
 	"github.com/rs/xid"
 )
 
@@ -20,7 +20,7 @@ func (self *RestEndpoint) createServiceInstance(w http.ResponseWriter, req *http
 	var createServiceInstanceRequest createServiceInstanceRequestType
 	if err := json.NewDecoder(req.Body).Decode(&createServiceInstanceRequest); err != nil {
 		logger.Errorf("Failed decoding service instance: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
+		sendBadRequestError(w, err)
 		return
 	}
 	serviceInstance := createServiceInstanceRequest.ServiceInstance
@@ -38,7 +38,7 @@ func (self *RestEndpoint) createServiceInstance(w http.ResponseWriter, req *http
 	// Store
 	if err := self.db.Create(&serviceInstance).Error; err != nil {
 		logger.Errorf("Failed creating new service instance: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -65,7 +65,7 @@ func (self *RestEndpoint) getServiceInstance(w http.ResponseWriter, req *http.Re
 			return
 		} else if res.Error != nil {
 			logger.Errorf("Failed finding service instance: %v", res.Error)
-			w.WriteHeader(http.StatusInternalServerError)
+			sendInternalServerError(w)
 			return
 		}
 	}
@@ -88,7 +88,7 @@ func (self *RestEndpoint) getServiceInstances(w http.ResponseWriter, req *http.R
 	res := self.db.Where(searchFor).Find(&serviceInstances)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all serviceInstances: %v", res.Error)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 

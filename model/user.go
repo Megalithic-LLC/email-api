@@ -9,6 +9,7 @@ type User struct {
 	Username  string `gorm:"size:30;unique_index;not null"`
 	First     string `gorm:"size:50"`
 	Last      string `gorm:"size:50"`
+	Email     string `gorm:"size:255;unique_index;not null"`
 	Password  []byte `gorm:"size:60"`
 	CreatedAt time.Time
 	UpdatedAt time.Time

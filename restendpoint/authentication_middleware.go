@@ -13,6 +13,7 @@ import (
 
 var (
 	ignorePrefixes = []string{
+		"/v1/confirmEmails",
 		"/v1/token",
 	}
 )
@@ -33,11 +34,19 @@ func NewAuthenticationMiddleware(db *gorm.DB, redisClient *redis.Client) *Authen
 func (self *AuthenticationMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		logger.Tracef("AuthenticationMiddleware(%s)", req.URL.Path)
+
+		// Allow certain paths
 		for _, ignorePrefix := range ignorePrefixes {
 			if strings.HasPrefix(req.URL.Path, ignorePrefix) {
 				next.ServeHTTP(w, req)
 				return
 			}
+		}
+
+		// Don't try to authenticate new user registrations
+		if req.Method == "POST" && req.URL.Path == "/v1/users" {
+			next.ServeHTTP(w, req)
+			return
 		}
 
 		// Allow known bearer tokens

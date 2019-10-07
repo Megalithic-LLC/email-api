@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/on-prem-net/email-api/model"
 	"github.com/docktermj/go-logger/logger"
 	"github.com/gorilla/mux"
+	"github.com/on-prem-net/email-api/model"
 )
 
 type serviceResType struct {
@@ -28,7 +28,7 @@ func (self *RestEndpoint) getService(w http.ResponseWriter, req *http.Request) {
 			return
 		} else if res.Error != nil {
 			logger.Errorf("Failed finding service: %v", res.Error)
-			w.WriteHeader(http.StatusInternalServerError)
+			sendInternalServerError(w)
 			return
 		}
 	}
@@ -37,7 +37,7 @@ func (self *RestEndpoint) getService(w http.ResponseWriter, req *http.Request) {
 	serviceRes, err := self.loadServicePlans(service)
 	if err != nil {
 		logger.Errorf("Failed loading plans for service: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -59,7 +59,7 @@ func (self *RestEndpoint) getServices(w http.ResponseWriter, req *http.Request) 
 	res := self.db.Where(searchFor).Find(&services)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all services: %v", res.Error)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -69,7 +69,7 @@ func (self *RestEndpoint) getServices(w http.ResponseWriter, req *http.Request) 
 		serviceRes, err := self.loadServicePlans(service)
 		if err != nil {
 			logger.Errorf("Failed loading plans for service: %v", res.Error)
-			w.WriteHeader(http.StatusInternalServerError)
+			sendInternalServerError(w)
 			return
 		}
 		servicesRes = append(servicesRes, serviceRes)
