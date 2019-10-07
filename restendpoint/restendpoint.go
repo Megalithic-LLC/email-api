@@ -40,6 +40,11 @@ func New(
 		router:              router,
 	}
 
+	router.HandleFunc("/v1/accounts", self.getAccounts).Methods("GET")
+	router.HandleFunc("/v1/accounts", self.createAccount).Methods("POST")
+	router.HandleFunc("/v1/accounts/{id}", self.deleteAccount).Methods("DELETE")
+	router.HandleFunc("/v1/accounts/{id}", self.getAccount).Methods("GET")
+
 	router.HandleFunc("/v1/agentStream", self.agentStream).Methods("GET")
 
 	router.HandleFunc("/v1/agents", self.getAgents).Methods("GET")
@@ -47,11 +52,6 @@ func New(
 	router.HandleFunc("/v1/agents/{id}", self.getAgent).Methods("GET")
 
 	router.HandleFunc("/v1/confirmEmails/{id}", self.getConfirmEmail).Methods("GET")
-
-	router.HandleFunc("/v1/emailAccounts", self.getEmailAccounts).Methods("GET")
-	router.HandleFunc("/v1/emailAccounts", self.createEmailAccount).Methods("POST")
-	router.HandleFunc("/v1/emailAccounts/{id}", self.deleteEmailAccount).Methods("DELETE")
-	router.HandleFunc("/v1/emailAccounts/{id}", self.getEmailAccount).Methods("GET")
 
 	router.HandleFunc("/v1/plans", self.getPlans).Methods("GET")
 	router.HandleFunc("/v1/plans/{id}", self.getPlan).Methods("GET")

@@ -2,8 +2,8 @@ package model
 
 var (
 	AllModels = []interface{}{
+		&Account{},
 		&Agent{},
-		&EmailAccount{},
 		&Plan{},
 		&Service{},
 		&ServiceInstance{},

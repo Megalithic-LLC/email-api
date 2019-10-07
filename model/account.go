@@ -5,24 +5,26 @@ import (
 	"time"
 )
 
-type EmailAccount struct {
+type Account struct {
 	ID                string     `json:"id" gorm:"primary_key;type:char(20)"`
 	AgentID           string     `json:"agent" gorm:"type:char(20);index"`
 	ServiceInstanceID string     `json:"serviceInstance" gorm:"type:char(20);index"`
-	Name              string     `json:"name" gorm:"type:varchar(100);index"`
 	Email             string     `json:"email" gorm:"type:varchar(255);index"`
+	Username          string     `json:"username" gorm:"type:varchar(100);index"`
+	Password          []byte     `json:"password"`
 	CreatedAt         time.Time  `json:"createdAt"`
 	UpdatedAt         time.Time  `json:"updatedAt"`
 	DeletedAt         *time.Time `json:"deletedAt" gorm:"index"`
 }
 
-func (self EmailAccount) Hash() []byte {
+func (self Account) Hash() []byte {
 	hasher := md5.New()
 	hasher.Write([]byte(self.ID))
 	hasher.Write([]byte(self.AgentID))
 	hasher.Write([]byte(self.ServiceInstanceID))
-	hasher.Write([]byte(self.Name))
 	hasher.Write([]byte(self.Email))
+	hasher.Write([]byte(self.Username))
+	hasher.Write(self.Password)
 
 	createdAtAsBinary, _ := self.CreatedAt.MarshalBinary()
 	hasher.Write(createdAtAsBinary)
