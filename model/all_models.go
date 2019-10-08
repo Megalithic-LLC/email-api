@@ -4,6 +4,7 @@ var (
 	AllModels = []interface{}{
 		&Account{},
 		&Agent{},
+		&Domain{},
 		&Plan{},
 		&Service{},
 		&ServiceInstance{},

@@ -53,6 +53,11 @@ func New(
 
 	router.HandleFunc("/v1/confirmEmails/{id}", self.getConfirmEmail).Methods("GET")
 
+	router.HandleFunc("/v1/domains", self.getDomains).Methods("GET")
+	router.HandleFunc("/v1/domains", self.createDomain).Methods("POST")
+	router.HandleFunc("/v1/domains/{id}", self.deleteDomain).Methods("DELETE")
+	router.HandleFunc("/v1/domains/{id}", self.getDomain).Methods("GET")
+
 	router.HandleFunc("/v1/plans", self.getPlans).Methods("GET")
 	router.HandleFunc("/v1/plans/{id}", self.getPlan).Methods("GET")
 

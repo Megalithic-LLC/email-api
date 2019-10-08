@@ -24,6 +24,20 @@ func (self *AgentStream) calcConfigHashes() (map[string][]byte, error) {
 		hashesByTable["accounts"] = hasher.Sum(nil)
 	}
 
+	// domains
+	{
+		domains := []model.Domain{}
+		searchFor := &model.Domain{AgentID: self.agentID}
+		if err := self.endpoint.db.Where(searchFor).Find(&domains).Error; err != nil {
+			return nil, err
+		}
+		hasher := md5.New()
+		for _, domain := range domains {
+			hasher.Write(domain.Hash())
+		}
+		hashesByTable["domains"] = hasher.Sum(nil)
+	}
+
 	// serviceInstances
 	{
 		serviceInstances := []model.ServiceInstance{}
