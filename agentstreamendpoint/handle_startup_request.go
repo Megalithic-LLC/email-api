@@ -1,9 +1,9 @@
 package agentstreamendpoint
 
 import (
+	"github.com/docktermj/go-logger/logger"
 	"github.com/on-prem-net/email-api/agentstreamendpoint/emailproto"
 	"github.com/on-prem-net/email-api/model"
-	"github.com/docktermj/go-logger/logger"
 )
 
 func (self *AgentStream) handleStartupRequest(requestId uint64, startupReq emailproto.StartupRequest) {
@@ -31,11 +31,5 @@ func (self *AgentStream) handleStartupRequest(requestId uint64, startupReq email
 
 	}
 
-	startupRes := emailproto.ServerMessage{
-		Id: requestId,
-		MessageType: &emailproto.ServerMessage_AckResponse{
-			AckResponse: &emailproto.AckResponse{},
-		},
-	}
-	self.SendResponse(startupRes)
+	self.SendStartupResponse(requestId)
 }

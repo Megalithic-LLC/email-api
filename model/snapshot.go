@@ -19,13 +19,17 @@ func (self Snapshot) Hash() []byte {
 	hasher.Write([]byte(self.ID))
 	hasher.Write([]byte(self.AgentID))
 	hasher.Write([]byte(self.Name))
+
 	createdAtAsBinary, _ := self.CreatedAt.MarshalBinary()
 	hasher.Write(createdAtAsBinary)
+
 	updatedAtAsBinary, _ := self.UpdatedAt.MarshalBinary()
 	hasher.Write(updatedAtAsBinary)
+
 	if self.DeletedAt != nil {
 		deletedAtAsBinary, _ := self.DeletedAt.MarshalBinary()
 		hasher.Write(deletedAtAsBinary)
 	}
+
 	return hasher.Sum(nil)
 }
