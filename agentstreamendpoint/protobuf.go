@@ -27,6 +27,23 @@ func AccountsAsProtobuf(accounts []model.Account) []*emailproto.Account {
 	return pbAccounts
 }
 
+func ServiceInstanceAsProtobuf(serviceInstance model.ServiceInstance) emailproto.ServiceInstance {
+	return emailproto.ServiceInstance{
+		Id:        serviceInstance.ID,
+		ServiceId: serviceInstance.ServiceID,
+		PlanId:    serviceInstance.PlanID,
+	}
+}
+
+func ServiceInstancesAsProtobuf(serviceInstances []model.ServiceInstance) []*emailproto.ServiceInstance {
+	pbServiceInstances := []*emailproto.ServiceInstance{}
+	for _, serviceInstance := range serviceInstances {
+		pbServiceInstance := ServiceInstanceAsProtobuf(serviceInstance)
+		pbServiceInstances = append(pbServiceInstances, &pbServiceInstance)
+	}
+	return pbServiceInstances
+}
+
 func SnapshotAsProtobuf(snapshot model.Snapshot) emailproto.Snapshot {
 	return emailproto.Snapshot{
 		Id:   snapshot.ID,
