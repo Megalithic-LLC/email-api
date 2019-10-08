@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/mail"
+	"strings"
 
 	"github.com/docktermj/go-logger/logger"
 	"github.com/gorilla/mux"
@@ -168,12 +170,36 @@ func (self *RestEndpoint) validateAccount(account *model.Account) ([]JsonApiErro
 			Detail: "An email address is required",
 		}
 		errs = append(errs, err)
+	} else {
+		_, err := mail.ParseAddress(account.Email)
+		if err != nil {
+			errs = append(errs, JsonApiError{
+				Status: fmt.Sprintf("%d", http.StatusBadRequest),
+				Title:  "Validation Error",
+				Detail: fmt.Sprintf("A valid email address is required (%v)", err),
+			})
+		}
 	}
-	if account.Username == "" {
+	if account.Name == "" {
 		err := JsonApiError{
 			Status: fmt.Sprintf("%d", http.StatusBadRequest),
 			Title:  "Validation Error",
-			Detail: "A username is required",
+			Detail: "A name is required",
+		}
+		errs = append(errs, err)
+	} else if !strings.HasPrefix(account.Email, account.Name+"@") {
+		err := JsonApiError{
+			Status: fmt.Sprintf("%d", http.StatusBadRequest),
+			Title:  "Validation Error",
+			Detail: "The name must match the first part of the email address",
+		}
+		errs = append(errs, err)
+	}
+	if account.DisplayName == "" {
+		err := JsonApiError{
+			Status: fmt.Sprintf("%d", http.StatusBadRequest),
+			Title:  "Validation Error",
+			Detail: "A display name is required",
 		}
 		errs = append(errs, err)
 	}
