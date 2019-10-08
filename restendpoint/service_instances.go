@@ -70,6 +70,13 @@ func (self *RestEndpoint) getServiceInstance(w http.ResponseWriter, req *http.Re
 		}
 	}
 
+	// Load related accounts
+	if err := self.loadAccounts(&serviceInstance); err != nil {
+		logger.Errorf("Failed loading accounts for service instance: %v", err)
+		sendInternalServerError(w)
+		return
+	}
+
 	// Send result
 	result := map[string]interface{}{}
 	result["serviceInstance"] = serviceInstance
@@ -83,13 +90,22 @@ func (self *RestEndpoint) getServiceInstances(w http.ResponseWriter, req *http.R
 	logger.Tracef("RestEndpoint:getServiceInstances()")
 
 	// Find
-	serviceInstances := []model.ServiceInstance{}
+	serviceInstances := []*model.ServiceInstance{}
 	searchFor := &model.ServiceInstance{}
 	res := self.db.Where(searchFor).Find(&serviceInstances)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all serviceInstances: %v", res.Error)
 		sendInternalServerError(w)
 		return
+	}
+
+	// Load related service instances
+	for _, serviceInstance := range serviceInstances {
+		if err := self.loadAccounts(serviceInstance); err != nil {
+			logger.Errorf("Failed loading accounts for service instance: %v", res.Error)
+			sendInternalServerError(w)
+			return
+		}
 	}
 
 	// Send result
@@ -99,4 +115,18 @@ func (self *RestEndpoint) getServiceInstances(w http.ResponseWriter, req *http.R
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		logger.Errorf("Error encoding response: %v", err)
 	}
+}
+
+func (self *RestEndpoint) loadAccounts(serviceInstance *model.ServiceInstance) error {
+	var accounts []model.Account
+	searchFor := &model.Account{ServiceInstanceID: serviceInstance.ID}
+	if err := self.db.Where(searchFor).Find(&accounts).Error; err != nil {
+		logger.Errorf("Failed loading accounts for service instance: %v", err)
+		return err
+	}
+	serviceInstance.AccountIDs = []string{}
+	for _, account := range accounts {
+		serviceInstance.AccountIDs = append(serviceInstance.AccountIDs, account.ID)
+	}
+	return nil
 }
