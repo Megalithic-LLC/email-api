@@ -10,6 +10,7 @@ type Account struct {
 	AgentID           string     `json:"agent" gorm:"type:char(20);index"`
 	ServiceInstanceID string     `json:"serviceInstance" gorm:"type:char(20);index"`
 	Name              string     `json:"name" gorm:"size:100;index"`
+	DomainID          string     `json:"domain" gorm:"type:char(20);index"`
 	Email             string     `json:"email" gorm:"size:255;index"`
 	First             string     `json:"first" gorm:"size:50"`
 	Last              string     `json:"last" gorm:"size:50"`
@@ -26,6 +27,7 @@ func (self Account) Hash() []byte {
 	hasher.Write([]byte(self.AgentID))
 	hasher.Write([]byte(self.ServiceInstanceID))
 	hasher.Write([]byte(self.Name))
+	hasher.Write([]byte(self.DomainID))
 	hasher.Write([]byte(self.Email))
 	hasher.Write([]byte(self.First))
 	hasher.Write([]byte(self.Last))

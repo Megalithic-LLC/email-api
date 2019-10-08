@@ -203,5 +203,48 @@ func (self *RestEndpoint) validateAccount(account *model.Account) ([]JsonApiErro
 		}
 		errs = append(errs, err)
 	}
+	// Default the domain foreign key
+	if account.DomainID == "" {
+		domainName := strings.Split(account.Email, "@")[1]
+		var domain model.Domain
+		searchFor := &model.Domain{Name: domainName, AgentID: account.AgentID}
+		if res := self.db.Where(searchFor).Limit(1).First(&domain); res.RecordNotFound() {
+			err := JsonApiError{
+				Status: fmt.Sprintf("%d", http.StatusBadRequest),
+				Title:  "Validation Error",
+				Detail: "A valid domain is required",
+			}
+			errs = append(errs, err)
+		} else if res.Error != nil {
+			logger.Errorf("Failed validating domain: %v", res.Error)
+			err := JsonApiError{
+				Status: fmt.Sprintf("%d", http.StatusInternalServerError),
+				Title:  "Validation Error",
+				Detail: "An internal error has occurred",
+			}
+			errs = append(errs, err)
+		} else {
+			account.DomainID = domain.ID
+		}
+	} else {
+		var domain model.Domain
+		searchFor := &model.Domain{ID: account.DomainID, AgentID: account.AgentID}
+		if res := self.db.Where(searchFor).Limit(1).First(&domain); res.RecordNotFound() {
+			err := JsonApiError{
+				Status: fmt.Sprintf("%d", http.StatusBadRequest),
+				Title:  "Validation Error",
+				Detail: "A valid domain reference is required",
+			}
+			errs = append(errs, err)
+		} else if res.Error != nil {
+			logger.Errorf("Failed validating domain: %v", res.Error)
+			err := JsonApiError{
+				Status: fmt.Sprintf("%d", http.StatusInternalServerError),
+				Title:  "Validation Error",
+				Detail: "An internal error has occurred",
+			}
+			errs = append(errs, err)
+		}
+	}
 	return errs, nil
 }
