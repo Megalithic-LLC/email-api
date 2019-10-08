@@ -17,7 +17,7 @@ func (self *RestEndpoint) agentStream(w http.ResponseWriter, req *http.Request) 
 	logger.Tracef("RestEndpoint:agentStream")
 
 	var agentID string
-	if values := req.Header["X-Agentid"]; len(values) != 1 {
+	if values := req.Header["X-Agentid"]; len(values) != 1 || values[0] == "" {
 		logger.Errorf("Agent failed to present an id: %+v", req)
 		sendBadRequestError(w, errors.New("Agent failed to present an X-Agentid header"))
 		return
