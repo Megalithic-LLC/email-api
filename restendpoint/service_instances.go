@@ -77,6 +77,13 @@ func (self *RestEndpoint) getServiceInstance(w http.ResponseWriter, req *http.Re
 		return
 	}
 
+	// Load related domains
+	if err := self.loadDomains(&serviceInstance); err != nil {
+		logger.Errorf("Failed loading domains for service instance: %v", err)
+		sendInternalServerError(w)
+		return
+	}
+
 	// Send result
 	result := map[string]interface{}{}
 	result["serviceInstance"] = serviceInstance
@@ -99,10 +106,18 @@ func (self *RestEndpoint) getServiceInstances(w http.ResponseWriter, req *http.R
 		return
 	}
 
-	// Load related service instances
+	// Load related foreign keys
 	for _, serviceInstance := range serviceInstances {
+		// Load related accounts
 		if err := self.loadAccounts(serviceInstance); err != nil {
 			logger.Errorf("Failed loading accounts for service instance: %v", res.Error)
+			sendInternalServerError(w)
+			return
+		}
+
+		// Load related domains
+		if err := self.loadDomains(serviceInstance); err != nil {
+			logger.Errorf("Failed loading domains  for service instance: %v", res.Error)
 			sendInternalServerError(w)
 			return
 		}
@@ -127,6 +142,20 @@ func (self *RestEndpoint) loadAccounts(serviceInstance *model.ServiceInstance) e
 	serviceInstance.AccountIDs = []string{}
 	for _, account := range accounts {
 		serviceInstance.AccountIDs = append(serviceInstance.AccountIDs, account.ID)
+	}
+	return nil
+}
+
+func (self *RestEndpoint) loadDomains(serviceInstance *model.ServiceInstance) error {
+	var domains []model.Domain
+	searchFor := &model.Domain{ServiceInstanceID: serviceInstance.ID}
+	if err := self.db.Where(searchFor).Find(&domains).Error; err != nil {
+		logger.Errorf("Failed loading domains for service instance: %v", err)
+		return err
+	}
+	serviceInstance.DomainIDs = []string{}
+	for _, domain := range domains {
+		serviceInstance.DomainIDs = append(serviceInstance.DomainIDs, domain.ID)
 	}
 	return nil
 }

@@ -10,6 +10,7 @@ type ServiceInstance struct {
 	AgentID    string     `json:"agent" gorm:"type:char(20);index"`
 	ServiceID  string     `json:"service" gorm:"type:char(20);index"`
 	AccountIDs []string   `json:"accounts" gorm:"-"`
+	DomainIDs  []string   `json:"domains" gorm:"-"`
 	PlanID     string     `json:"plan" gorm:"type:char(20);index"`
 	CreatedAt  time.Time  `json:"createdAt"`
 	UpdatedAt  time.Time  `json:"updatedAt"`
@@ -21,9 +22,6 @@ func (self ServiceInstance) Hash() []byte {
 	hasher.Write([]byte(self.ID))
 	hasher.Write([]byte(self.AgentID))
 	hasher.Write([]byte(self.ServiceID))
-	for _, accountID := range self.AccountIDs {
-		hasher.Write([]byte(accountID))
-	}
 	hasher.Write([]byte(self.PlanID))
 
 	createdAtAsBinary, _ := self.CreatedAt.MarshalBinary()
