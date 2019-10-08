@@ -26,3 +26,19 @@ func AccountsAsProtobuf(accounts []model.Account) []*emailproto.Account {
 	}
 	return pbAccounts
 }
+
+func SnapshotAsProtobuf(snapshot model.Snapshot) emailproto.Snapshot {
+	return emailproto.Snapshot{
+		Id:   snapshot.ID,
+		Name: snapshot.Name,
+	}
+}
+
+func SnapshotsAsProtobuf(snapshots []model.Snapshot) []*emailproto.Snapshot {
+	pbSnapshots := []*emailproto.Snapshot{}
+	for _, snapshot := range snapshots {
+		pbSnapshot := SnapshotAsProtobuf(snapshot)
+		pbSnapshots = append(pbSnapshots, &pbSnapshot)
+	}
+	return pbSnapshots
+}

@@ -14,6 +14,10 @@ func (self *AgentStream) route(message emailproto.ClientMessage) {
 		getAccountsRequest := message.GetGetAccountsRequest()
 		self.handleGetAccountsRequest(message.Id, *getAccountsRequest)
 
+	case *emailproto.ClientMessage_GetSnapshotsRequest:
+		getSnapshotsRequest := message.GetGetSnapshotsRequest()
+		self.handleGetSnapshotsRequest(message.Id, *getSnapshotsRequest)
+
 	case *emailproto.ClientMessage_StartupRequest:
 		startupRequest := message.GetStartupRequest()
 		self.handleStartupRequest(message.Id, *startupRequest)

@@ -13,7 +13,7 @@ func (self *AgentStream) calcConfigHashes() (map[string][]byte, error) {
 	// accounts
 	{
 		accounts := []model.Account{}
-		searchFor := &model.Account{}
+		searchFor := &model.Account{AgentID: self.agentID}
 		if err := self.endpoint.db.Where(searchFor).Find(&accounts).Error; err != nil {
 			return nil, err
 		}
@@ -27,7 +27,7 @@ func (self *AgentStream) calcConfigHashes() (map[string][]byte, error) {
 	// serviceInstances
 	{
 		serviceInstances := []model.ServiceInstance{}
-		searchFor := &model.ServiceInstance{}
+		searchFor := &model.ServiceInstance{AgentID: self.agentID}
 		if err := self.endpoint.db.Where(searchFor).Find(&serviceInstances).Error; err != nil {
 			return nil, err
 		}
@@ -41,7 +41,7 @@ func (self *AgentStream) calcConfigHashes() (map[string][]byte, error) {
 	// snapshots
 	{
 		snapshots := []model.Snapshot{}
-		searchFor := &model.Snapshot{}
+		searchFor := &model.Snapshot{AgentID: self.agentID}
 		if err := self.endpoint.db.Where(searchFor).Find(&snapshots).Error; err != nil {
 			return nil, err
 		}
