@@ -9,6 +9,7 @@ var (
 		&Service{},
 		&ServiceInstance{},
 		&Snapshot{},
+		&SnapshotChunk{},
 		&User{},
 	}
 )
