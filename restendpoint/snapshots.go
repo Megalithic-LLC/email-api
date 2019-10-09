@@ -61,6 +61,40 @@ func (self *RestEndpoint) createSnapshot(w http.ResponseWriter, req *http.Reques
 	}
 }
 
+func (self *RestEndpoint) deleteSnapshot(w http.ResponseWriter, req *http.Request) {
+	id := mux.Vars(req)["id"]
+	logger.Tracef("RestEndpoint:deleteSnapshot(%s)", id)
+
+	// Find
+	var snapshot model.Snapshot
+	{
+		searchFor := &model.Snapshot{ID: id}
+		if res := self.db.Where(searchFor).Limit(1).First(&snapshot); res.RecordNotFound() {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		} else if res.Error != nil {
+			logger.Errorf("Failed finding snapshot: %v", res.Error)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Delete
+	if err := self.db.Delete(&snapshot).Error; err != nil {
+		logger.Errorf("Failed deleting snapshot: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Notify streaming agent
+	if agentStream := self.agentStreamEndpoint.FindAgentStream(snapshot.AgentID); agentStream != nil {
+		agentStream.SendConfigChangedRequest()
+	}
+
+	// Send result
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (self *RestEndpoint) getSnapshot(w http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	logger.Tracef("RestEndpoint:getSnapshot(%s)", id)

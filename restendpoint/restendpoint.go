@@ -70,6 +70,7 @@ func New(
 
 	router.HandleFunc("/v1/snapshots", self.getSnapshots).Methods("GET")
 	router.HandleFunc("/v1/snapshots", self.createSnapshot).Methods("POST")
+	router.HandleFunc("/v1/snapshots/{id}", self.deleteSnapshot).Methods("DELETE")
 	router.HandleFunc("/v1/snapshots/{id}", self.getSnapshot).Methods("GET")
 
 	router.HandleFunc("/v1/tokenAuth", self.createToken).Methods("POST")
