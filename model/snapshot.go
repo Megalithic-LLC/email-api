@@ -7,14 +7,15 @@ import (
 )
 
 type Snapshot struct {
-	ID        string     `json:"id" gorm:"primary_key;type:char(20)"`
-	AgentID   string     `json:"agent" gorm:"type:char(20);index"`
-	Name      string     `json:"name" gorm:"type:varchar(100);index"`
-	Progress  float32    `json:"progress"`
-	Size      uint64     `json:"size"`
-	CreatedAt time.Time  `json:"createdAt"`
-	UpdatedAt time.Time  `json:"updatedAt"`
-	DeletedAt *time.Time `json:"deletedAt" gorm:"index"`
+	ID              string     `json:"id" gorm:"primary_key;type:char(20)"`
+	AgentID         string     `json:"agent" gorm:"type:char(20);index"`
+	Name            string     `json:"name" gorm:"type:varchar(100);index"`
+	Progress        float32    `json:"progress"`
+	Size            uint64     `json:"size"`
+	CreatedByUserID string     `json:"createdBy" gorm:"type:char(20)"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	UpdatedAt       time.Time  `json:"updatedAt"`
+	DeletedAt       *time.Time `json:"deletedAt" gorm:"index"`
 }
 
 func (self Snapshot) Hash() []byte {
@@ -23,6 +24,7 @@ func (self Snapshot) Hash() []byte {
 	hasher.Write([]byte(self.AgentID))
 	hasher.Write([]byte(self.Name))
 	hasher.Write([]byte(fmt.Sprintf("%v", self.Size)))
+	hasher.Write([]byte(self.CreatedByUserID))
 
 	createdAtAsBinary, _ := self.CreatedAt.MarshalBinary()
 	hasher.Write(createdAtAsBinary)

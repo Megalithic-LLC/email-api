@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/docktermj/go-logger/logger"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/on-prem-net/email-api/model"
 	"github.com/rs/xid"
@@ -42,6 +43,8 @@ func (self *RestEndpoint) createAccount(w http.ResponseWriter, req *http.Request
 	if account.ID == "" {
 		account.ID = xid.New().String()
 	}
+	currentUserID := context.Get(req, "currentUserID").(string)
+	account.CreatedByUserID = currentUserID
 	if err := self.db.Create(&account).Error; err != nil {
 		logger.Errorf("Failed creating new account: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)

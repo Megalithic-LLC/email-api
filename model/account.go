@@ -16,6 +16,7 @@ type Account struct {
 	Last              string     `json:"last" gorm:"size:50"`
 	DisplayName       string     `json:"displayName" gorm:"size:100"`
 	Password          []byte     `json:"password" gorm:"size:50"`
+	CreatedByUserID   string     `json:"createdBy" gorm:"type:char(20)"`
 	CreatedAt         time.Time  `json:"createdAt"`
 	UpdatedAt         time.Time  `json:"updatedAt"`
 	DeletedAt         *time.Time `json:"deletedAt" gorm:"index"`
@@ -33,6 +34,7 @@ func (self Account) Hash() []byte {
 	hasher.Write([]byte(self.Last))
 	hasher.Write([]byte(self.DisplayName))
 	hasher.Write(self.Password)
+	hasher.Write([]byte(self.CreatedByUserID))
 
 	createdAtAsBinary, _ := self.CreatedAt.MarshalBinary()
 	hasher.Write(createdAtAsBinary)

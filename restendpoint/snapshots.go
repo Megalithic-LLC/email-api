@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/docktermj/go-logger/logger"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/on-prem-net/email-api/model"
 	"github.com/rs/xid"
@@ -40,6 +41,8 @@ func (self *RestEndpoint) createSnapshot(w http.ResponseWriter, req *http.Reques
 	if snapshot.ID == "" {
 		snapshot.ID = xid.New().String()
 	}
+	currentUserID := context.Get(req, "currentUserID").(string)
+	snapshot.CreatedByUserID = currentUserID
 	if err := self.db.Create(&snapshot).Error; err != nil {
 		logger.Errorf("Failed creating new snapshot: %v", err)
 		sendInternalServerError(w)

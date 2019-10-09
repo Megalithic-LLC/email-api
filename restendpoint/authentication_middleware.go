@@ -52,14 +52,19 @@ func (self *AuthenticationMiddleware) Middleware(next http.Handler) http.Handler
 		// Allow known bearer tokens
 		authHeader := req.Header.Get("Authorization")
 		if strings.HasPrefix(authHeader, "Bearer ") {
-			bearerToken := authHeader[7:]
-			userID, err := self.redisClient.Get(fmt.Sprintf("tok:%s", bearerToken)).Result()
-			if err != nil {
+			bearerTokenString := authHeader[7:]
+			if _, err := self.redisClient.Get(fmt.Sprintf("tok:%s", bearerTokenString)).Result(); err != nil {
 				logger.Errorf("Failed looking up token: %v", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			context.Set(req, "currentUserID", userID)
+			bearerToken, err := parseTokenString(bearerTokenString)
+			if err != nil {
+				logger.Errorf("Failed parsing bearer token: %v", err)
+				sendInternalServerError(w)
+				return
+			}
+			context.Set(req, "currentUserID", bearerToken.UserID)
 			next.ServeHTTP(w, req)
 			return
 		}

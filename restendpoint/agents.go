@@ -86,8 +86,8 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 
 	// Create agent
 	agent := model.Agent{
-		ID:          agentID,
-		OwnerUserID: context.Get(req, "currentUserID").(string),
+		ID:              agentID,
+		CreatedByUserID: currentUserID,
 	}
 	if err := self.db.Create(&agent).Error; err != nil {
 		logger.Errorf("Failed creating new agent: %v", err)
@@ -125,7 +125,7 @@ func (self *RestEndpoint) getAgent(w http.ResponseWriter, req *http.Request) {
 		sendInternalServerError(w)
 		return
 	}
-	if agent.OwnerUserID != context.Get(req, "currentUserID").(string) {
+	if agent.CreatedByUserID != context.Get(req, "currentUserID").(string) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -158,7 +158,7 @@ func (self *RestEndpoint) getAgents(w http.ResponseWriter, req *http.Request) {
 
 	// Find agents
 	agents := []*model.Agent{}
-	searchFor := &model.Agent{OwnerUserID: context.Get(req, "currentUserID").(string)}
+	searchFor := &model.Agent{CreatedByUserID: context.Get(req, "currentUserID").(string)}
 	res := self.db.Where(searchFor).Find(&agents)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all agents: %v", res.Error)

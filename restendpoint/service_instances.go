@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/docktermj/go-logger/logger"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/on-prem-net/email-api/model"
 	"github.com/rs/xid"
@@ -40,6 +41,8 @@ func (self *RestEndpoint) createServiceInstance(w http.ResponseWriter, req *http
 	if serviceInstance.ID == "" {
 		serviceInstance.ID = xid.New().String()
 	}
+	currentUserID := context.Get(req, "currentUserID").(string)
+	serviceInstance.CreatedByUserID = currentUserID
 	if err := self.db.Create(&serviceInstance).Error; err != nil {
 		logger.Errorf("Failed creating new service instance: %v", err)
 		sendInternalServerError(w)

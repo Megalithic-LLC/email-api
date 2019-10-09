@@ -71,7 +71,7 @@ func (self *RestEndpoint) createToken(w http.ResponseWriter, req *http.Request) 
 }
 
 func (self *RestEndpoint) refreshToken(w http.ResponseWriter, req *http.Request) {
-	logger.Tracef("RestEndpoint:refreshToken")
+	logger.Tracef("RestEndpoint:refreshToken()")
 
 	// Receive username/password submission
 	credentials := map[string]string{}
@@ -116,6 +116,8 @@ func (self *RestEndpoint) refreshToken(w http.ResponseWriter, req *http.Request)
 }
 
 func (self *RestEndpoint) generateAndStoreTokensThenRespond(userID, agentID string, w http.ResponseWriter, req *http.Request) {
+	logger.Tracef("RestEndpoint:generateAndStoreTokensThenRespond(%s)", userID)
+
 	// Generate token
 	tokenString, err := self.generateTokenString(tokenTTL, userID, agentID)
 	if err != nil {
