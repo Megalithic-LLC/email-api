@@ -2,6 +2,7 @@ package agentstreamendpoint
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/docktermj/go-logger/logger"
 	"github.com/on-prem-net/email-api/agentstreamendpoint/emailproto"
@@ -33,6 +34,28 @@ func (self *AgentStream) handleSetSnapshotChunkRequest(requestId uint64, setSnap
 	key := fmt.Sprintf("snapshot/%s/needed-chunks", snapshot.ID)
 	if err := self.endpoint.redisClient.SRem(key, snapshotChunk.Number).Err(); err != nil {
 		logger.Errorf("Failed removing needed snapshot chunk from redis: %v", err)
+		self.SendErrorResponse(requestId, err)
+		return
+	}
+
+	// Update progress. How many chunks remaining?
+	chunkNumbers, err := self.endpoint.redisClient.SMembers(key).Result()
+	if err != nil {
+		logger.Errorf("Failed reading needed snapshot chunks from redis: %v", err)
+		self.SendErrorResponse(requestId, err)
+		return
+	}
+	chunksRemainingCount := len(chunkNumbers)
+	totalChunksCount := int(math.Ceil(float64(snapshot.Size) / float64(chunkSize)))
+	chunksCompletedCount := totalChunksCount - chunksRemainingCount
+	progress := 100 * float32(chunksCompletedCount) / float32(totalChunksCount)
+
+	// Update progress from 0..100% to 50..100% (transfer is 2nd half of range, file snapshot is 1st)
+	progress = 50 + progress/2
+
+	updates := model.Snapshot{Progress: progress}
+	if err := self.endpoint.db.Model(&snapshot).Updates(&updates).Error; err != nil {
+		logger.Errorf("Failed updating snapshot with progress: %v", err)
 		self.SendErrorResponse(requestId, err)
 		return
 	}
