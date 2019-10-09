@@ -66,7 +66,8 @@ func (self *RestEndpoint) getServiceInstance(w http.ResponseWriter, req *http.Re
 	// Find
 	var serviceInstance model.ServiceInstance
 	{
-		searchFor := &model.ServiceInstance{ID: id}
+		currentUserID := context.Get(req, "currentUserID").(string)
+		searchFor := &model.ServiceInstance{ID: id, CreatedByUserID: currentUserID}
 		if res := self.db.Where(searchFor).Limit(1).First(&serviceInstance); res.RecordNotFound() {
 			w.WriteHeader(http.StatusNotFound)
 			return

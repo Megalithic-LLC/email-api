@@ -129,8 +129,9 @@ func (self *RestEndpoint) getSnapshots(w http.ResponseWriter, req *http.Request)
 	logger.Tracef("RestEndpoint:getSnapshots()")
 
 	// Find
+	currentUserID := context.Get(req, "currentUserID").(string)
 	snapshots := []model.Snapshot{}
-	searchFor := &model.Snapshot{}
+	searchFor := &model.Snapshot{CreatedByUserID: currentUserID}
 	res := self.db.Where(searchFor).Find(&snapshots)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all snapshots: %v", res.Error)

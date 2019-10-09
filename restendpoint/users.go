@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/docktermj/go-logger/logger"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/on-prem-net/email-api/model"
 	"github.com/rs/xid"
@@ -116,6 +117,12 @@ func (self *RestEndpoint) createUser(w http.ResponseWriter, req *http.Request) {
 func (self *RestEndpoint) getUser(w http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	logger.Tracef("RestEndpoint:getUser(%s)", id)
+
+	currentUserID := context.Get(req, "currentUserID").(string)
+	if id != currentUserID {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
 
 	// Find
 	var user model.User

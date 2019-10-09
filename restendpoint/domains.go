@@ -128,8 +128,9 @@ func (self *RestEndpoint) getDomains(w http.ResponseWriter, req *http.Request) {
 	logger.Tracef("RestEndpoint:getDomains()")
 
 	// Find
+	currentUserID := context.Get(req, "currentUserID").(string)
 	domains := []model.Domain{}
-	searchFor := &model.Domain{}
+	searchFor := &model.Domain{CreatedByUserID: currentUserID}
 	res := self.db.Where(searchFor).Find(&domains)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all domains: %v", res.Error)

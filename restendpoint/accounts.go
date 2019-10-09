@@ -130,8 +130,9 @@ func (self *RestEndpoint) getAccounts(w http.ResponseWriter, req *http.Request) 
 	logger.Tracef("RestEndpoint:getAccounts()")
 
 	// Find
+	currentUserID := context.Get(req, "currentUserID").(string)
 	accounts := []model.Account{}
-	searchFor := &model.Account{}
+	searchFor := &model.Account{CreatedByUserID: currentUserID}
 	res := self.db.Where(searchFor).Find(&accounts)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all accounts: %v", res.Error)
