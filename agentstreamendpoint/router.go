@@ -26,6 +26,10 @@ func (self *AgentStream) route(message emailproto.ClientMessage) {
 		getSnapshotsRequest := message.GetGetSnapshotsRequest()
 		self.handleGetSnapshotsRequest(message.Id, *getSnapshotsRequest)
 
+	case *emailproto.ClientMessage_SnapshotProgressRequest:
+		snapshotProgressRequest := message.GetSnapshotProgressRequest()
+		self.handleSnapshotProgressRequest(message.Id, *snapshotProgressRequest)
+
 	case *emailproto.ClientMessage_StartupRequest:
 		startupRequest := message.GetStartupRequest()
 		self.handleStartupRequest(message.Id, *startupRequest)
