@@ -2,6 +2,7 @@ package restendpoint
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/docktermj/go-logger/logger"
@@ -26,16 +27,19 @@ func (self *RestEndpoint) createServiceInstance(w http.ResponseWriter, req *http
 	serviceInstance := createServiceInstanceRequest.ServiceInstance
 
 	// Validate
-	if serviceInstance.AgentID == "" || serviceInstance.ServiceID == "" || serviceInstance.PlanID == "" {
-		w.WriteHeader(http.StatusBadRequest)
+	if validationErrors, err := self.validateServiceInstance(&serviceInstance); err != nil {
+		logger.Errorf("Failure validating service instance: %v", err)
+		sendInternalServerError(w)
+		return
+	} else if len(validationErrors) > 0 {
+		sendErrors(w, validationErrors)
 		return
 	}
 
+	// Store
 	if serviceInstance.ID == "" {
 		serviceInstance.ID = xid.New().String()
 	}
-
-	// Store
 	if err := self.db.Create(&serviceInstance).Error; err != nil {
 		logger.Errorf("Failed creating new service instance: %v", err)
 		sendInternalServerError(w)
@@ -158,4 +162,56 @@ func (self *RestEndpoint) loadDomains(serviceInstance *model.ServiceInstance) er
 		serviceInstance.DomainIDs = append(serviceInstance.DomainIDs, domain.ID)
 	}
 	return nil
+}
+
+func (self *RestEndpoint) validateServiceInstance(serviceInstance *model.ServiceInstance) ([]JsonApiError, error) {
+	errs := []JsonApiError{}
+	if serviceInstance.AgentID == "" {
+		err := JsonApiError{
+			Status: fmt.Sprintf("%d", http.StatusBadRequest),
+			Title:  "Validation Error",
+			Detail: "An agent reference is required",
+		}
+		errs = append(errs, err)
+	}
+	if serviceInstance.ServiceID == "" {
+		err := JsonApiError{
+			Status: fmt.Sprintf("%d", http.StatusBadRequest),
+			Title:  "Validation Error",
+			Detail: "A service reference is required",
+		}
+		errs = append(errs, err)
+	}
+	if serviceInstance.PlanID == "" {
+		err := JsonApiError{
+			Status: fmt.Sprintf("%d", http.StatusBadRequest),
+			Title:  "Validation Error",
+			Detail: "A plan reference is required",
+		}
+		errs = append(errs, err)
+	}
+
+	// Only one service instance of a given service can be activated within an agent
+	{
+		var serviceInstance model.ServiceInstance
+		searchFor := &model.ServiceInstance{AgentID: serviceInstance.AgentID, ServiceID: serviceInstance.ServiceID}
+		if res := self.db.Where(searchFor).Limit(1).First(&serviceInstance); res.Error == nil {
+			err := JsonApiError{
+				Status: fmt.Sprintf("%d", http.StatusInternalServerError),
+				Title:  "Validation Error",
+				Detail: "A service may not be added to an agent more than once",
+			}
+			errs = append(errs, err)
+		} else if res.Error != nil && !res.RecordNotFound() {
+			logger.Errorf("Failed looking for existing service instance: %v", res.Error)
+			err := JsonApiError{
+				Status: fmt.Sprintf("%d", http.StatusInternalServerError),
+				Title:  "Validation Error",
+				Detail: "An internal server error has occurred",
+			}
+			errs = append(errs, err)
+		}
+	}
+
+	return errs, nil
 }
