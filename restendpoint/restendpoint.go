@@ -66,6 +66,7 @@ func New(
 
 	router.HandleFunc("/v1/serviceInstances", self.getServiceInstances).Methods("GET")
 	router.HandleFunc("/v1/serviceInstances", self.createServiceInstance).Methods("POST")
+	router.HandleFunc("/v1/serviceInstances/{id}", self.deleteServiceInstance).Methods("DELETE")
 	router.HandleFunc("/v1/serviceInstances/{id}", self.getServiceInstance).Methods("GET")
 
 	router.HandleFunc("/v1/snapshots", self.getSnapshots).Methods("GET")

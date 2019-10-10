@@ -59,6 +59,61 @@ func (self *RestEndpoint) createServiceInstance(w http.ResponseWriter, req *http
 	}
 }
 
+func (self *RestEndpoint) deleteServiceInstance(w http.ResponseWriter, req *http.Request) {
+	id := mux.Vars(req)["id"]
+	logger.Tracef("RestEndpoint:deleteServiceInstance(%s)", id)
+
+	// Find
+	var serviceInstance model.ServiceInstance
+	{
+		searchFor := &model.ServiceInstance{ID: id}
+		if res := self.db.Where(searchFor).Limit(1).First(&serviceInstance); res.RecordNotFound() {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		} else if res.Error != nil {
+			logger.Errorf("Failed finding service instance: %v", res.Error)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Delete
+	tx := self.db.Begin()
+	defer tx.Rollback()
+	if err := tx.Delete(&model.Account{ServiceInstanceID: id}).Error; err != nil {
+		logger.Errorf("Failed deleting accounts related to service instance: %v", err)
+		tx.Rollback()
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err := tx.Delete(&model.Domain{ServiceInstanceID: id}).Error; err != nil {
+		logger.Errorf("Failed deleting domains related to service instance: %v", err)
+		tx.Rollback()
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err := tx.Delete(&serviceInstance).Error; err != nil {
+		logger.Errorf("Failed deleting service instance: %v", err)
+		tx.Rollback()
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if err := tx.Commit().Error; err != nil {
+		logger.Errorf("Failed deleting service instance: %v", err)
+		tx.Rollback()
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Notify streaming agent
+	if agentStream := self.agentStreamEndpoint.FindAgentStream(serviceInstance.AgentID); agentStream != nil {
+		agentStream.SendConfigChangedRequest()
+	}
+
+	// Send result
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (self *RestEndpoint) getServiceInstance(w http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	logger.Tracef("RestEndpoint:getServiceInstance(%s)", id)

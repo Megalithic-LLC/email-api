@@ -77,7 +77,7 @@ func (self *RestEndpoint) deleteAccount(w http.ResponseWriter, req *http.Request
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if res.Error != nil {
-			logger.Errorf("Failed finding email account: %v", res.Error)
+			logger.Errorf("Failed finding account: %v", res.Error)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -85,7 +85,7 @@ func (self *RestEndpoint) deleteAccount(w http.ResponseWriter, req *http.Request
 
 	// Delete
 	if err := self.db.Delete(&account).Error; err != nil {
-		logger.Errorf("Failed deleting email account: %v", err)
+		logger.Errorf("Failed deleting account: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
