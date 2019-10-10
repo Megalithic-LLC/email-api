@@ -37,16 +37,97 @@ func (self *RestEndpoint) createServiceInstance(w http.ResponseWriter, req *http
 		return
 	}
 
-	// Store
+	// Set defaults
 	if serviceInstance.ID == "" {
 		serviceInstance.ID = xid.New().String()
 	}
 	currentUserID := context.Get(req, "currentUserID").(string)
 	serviceInstance.CreatedByUserID = currentUserID
-	if err := self.db.Create(&serviceInstance).Error; err != nil {
-		logger.Errorf("Failed creating new service instance: %v", err)
+
+	imapEndpoint := model.Endpoint{
+		ID:                xid.New().String(),
+		AgentID:           serviceInstance.AgentID,
+		ServiceInstanceID: serviceInstance.ID,
+		Protocol:          "imap",
+		Type:              "tcp",
+		Port:              8143,
+		CreatedByUserID:   currentUserID,
+	}
+
+	lmtpEndpoint := model.Endpoint{
+		ID:                xid.New().String(),
+		AgentID:           serviceInstance.AgentID,
+		ServiceInstanceID: serviceInstance.ID,
+		Protocol:          "lmtp",
+		Type:              "unix",
+		CreatedByUserID:   currentUserID,
+	}
+
+	smtpEndpoint := model.Endpoint{
+		ID:                xid.New().String(),
+		AgentID:           serviceInstance.AgentID,
+		ServiceInstanceID: serviceInstance.ID,
+		Protocol:          "smtp",
+		Type:              "tcp",
+		Port:              8025,
+		CreatedByUserID:   currentUserID,
+	}
+
+	submissionEndpoint := model.Endpoint{
+		ID:                xid.New().String(),
+		AgentID:           serviceInstance.AgentID,
+		ServiceInstanceID: serviceInstance.ID,
+		Protocol:          "submission",
+		Type:              "tcp",
+		Port:              8587,
+		CreatedByUserID:   currentUserID,
+	}
+
+	// Store
+	tx := self.db.Begin()
+	defer tx.Rollback()
+	if err := tx.Create(&serviceInstance).Error; err != nil {
+		logger.Errorf("Failed creating service instance: %v", err)
+		tx.Rollback()
 		sendInternalServerError(w)
 		return
+	}
+	if err := tx.Create(&imapEndpoint).Error; err != nil {
+		logger.Errorf("Failed creating default imap endpoint for new service instance: %v", err)
+		tx.Rollback()
+		sendInternalServerError(w)
+		return
+	}
+	if err := tx.Create(&lmtpEndpoint).Error; err != nil {
+		logger.Errorf("Failed creating default lmtp endpoint for new service instance: %v", err)
+		tx.Rollback()
+		sendInternalServerError(w)
+		return
+	}
+	if err := tx.Create(&smtpEndpoint).Error; err != nil {
+		logger.Errorf("Failed creating default smtp endpoint for new service instance: %v", err)
+		tx.Rollback()
+		sendInternalServerError(w)
+		return
+	}
+	if err := tx.Create(&submissionEndpoint).Error; err != nil {
+		logger.Errorf("Failed creating default smtp submission endpoint for new service instance: %v", err)
+		tx.Rollback()
+		sendInternalServerError(w)
+		return
+	}
+	if err := tx.Commit().Error; err != nil {
+		logger.Errorf("Failed creating new service instance: %v", err)
+		tx.Rollback()
+		sendInternalServerError(w)
+		return
+	}
+
+	serviceInstance.EndpointIDs = []string{
+		imapEndpoint.ID,
+		lmtpEndpoint.ID,
+		smtpEndpoint.ID,
+		submissionEndpoint.ID,
 	}
 
 	// Send result
@@ -72,7 +153,7 @@ func (self *RestEndpoint) deleteServiceInstance(w http.ResponseWriter, req *http
 			return
 		} else if res.Error != nil {
 			logger.Errorf("Failed finding service instance: %v", res.Error)
-			w.WriteHeader(http.StatusInternalServerError)
+			sendInternalServerError(w)
 			return
 		}
 	}
@@ -83,25 +164,31 @@ func (self *RestEndpoint) deleteServiceInstance(w http.ResponseWriter, req *http
 	if err := tx.Delete(&model.Account{ServiceInstanceID: id}).Error; err != nil {
 		logger.Errorf("Failed deleting accounts related to service instance: %v", err)
 		tx.Rollback()
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 	if err := tx.Delete(&model.Domain{ServiceInstanceID: id}).Error; err != nil {
 		logger.Errorf("Failed deleting domains related to service instance: %v", err)
 		tx.Rollback()
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
+		return
+	}
+	if err := tx.Delete(&model.Endpoint{ServiceInstanceID: id}).Error; err != nil {
+		logger.Errorf("Failed deleting endpoints related to service instance: %v", err)
+		tx.Rollback()
+		sendInternalServerError(w)
 		return
 	}
 	if err := tx.Delete(&serviceInstance).Error; err != nil {
 		logger.Errorf("Failed deleting service instance: %v", err)
 		tx.Rollback()
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 	if err := tx.Commit().Error; err != nil {
 		logger.Errorf("Failed deleting service instance: %v", err)
 		tx.Rollback()
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -147,6 +234,13 @@ func (self *RestEndpoint) getServiceInstance(w http.ResponseWriter, req *http.Re
 		return
 	}
 
+	// Load related endpoints
+	if err := self.loadEndpoints(&serviceInstance); err != nil {
+		logger.Errorf("Failed loading endpoints for service instance: %v", err)
+		sendInternalServerError(w)
+		return
+	}
+
 	// Send result
 	result := map[string]interface{}{}
 	result["serviceInstance"] = serviceInstance
@@ -180,7 +274,14 @@ func (self *RestEndpoint) getServiceInstances(w http.ResponseWriter, req *http.R
 
 		// Load related domains
 		if err := self.loadDomains(serviceInstance); err != nil {
-			logger.Errorf("Failed loading domains  for service instance: %v", res.Error)
+			logger.Errorf("Failed loading domains for service instance: %v", res.Error)
+			sendInternalServerError(w)
+			return
+		}
+
+		// Load related endpoints
+		if err := self.loadEndpoints(serviceInstance); err != nil {
+			logger.Errorf("Failed loading endpoints for service instance: %v", res.Error)
 			sendInternalServerError(w)
 			return
 		}
@@ -219,6 +320,20 @@ func (self *RestEndpoint) loadDomains(serviceInstance *model.ServiceInstance) er
 	serviceInstance.DomainIDs = []string{}
 	for _, domain := range domains {
 		serviceInstance.DomainIDs = append(serviceInstance.DomainIDs, domain.ID)
+	}
+	return nil
+}
+
+func (self *RestEndpoint) loadEndpoints(serviceInstance *model.ServiceInstance) error {
+	var endpoints []model.Endpoint
+	searchFor := &model.Endpoint{ServiceInstanceID: serviceInstance.ID}
+	if err := self.db.Where(searchFor).Find(&endpoints).Error; err != nil {
+		logger.Errorf("Failed loading endpoints for service instance: %v", err)
+		return err
+	}
+	serviceInstance.EndpointIDs = []string{}
+	for _, endpoint := range endpoints {
+		serviceInstance.EndpointIDs = append(serviceInstance.EndpointIDs, endpoint.ID)
 	}
 	return nil
 }

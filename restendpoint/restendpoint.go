@@ -58,6 +58,11 @@ func New(
 	router.HandleFunc("/v1/domains/{id}", self.deleteDomain).Methods("DELETE")
 	router.HandleFunc("/v1/domains/{id}", self.getDomain).Methods("GET")
 
+	router.HandleFunc("/v1/endpoints", self.getEndpoints).Methods("GET")
+	router.HandleFunc("/v1/endpoints", self.createEndpoint).Methods("POST")
+	router.HandleFunc("/v1/endpoints/{id}", self.deleteEndpoint).Methods("DELETE")
+	router.HandleFunc("/v1/endpoints/{id}", self.getEndpoint).Methods("GET")
+
 	router.HandleFunc("/v1/plans", self.getPlans).Methods("GET")
 	router.HandleFunc("/v1/plans/{id}", self.getPlan).Methods("GET")
 

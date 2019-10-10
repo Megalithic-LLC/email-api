@@ -47,7 +47,7 @@ func (self *RestEndpoint) createAccount(w http.ResponseWriter, req *http.Request
 	account.CreatedByUserID = currentUserID
 	if err := self.db.Create(&account).Error; err != nil {
 		logger.Errorf("Failed creating new account: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -78,7 +78,7 @@ func (self *RestEndpoint) deleteAccount(w http.ResponseWriter, req *http.Request
 			return
 		} else if res.Error != nil {
 			logger.Errorf("Failed finding account: %v", res.Error)
-			w.WriteHeader(http.StatusInternalServerError)
+			sendInternalServerError(w)
 			return
 		}
 	}
@@ -86,7 +86,7 @@ func (self *RestEndpoint) deleteAccount(w http.ResponseWriter, req *http.Request
 	// Delete
 	if err := self.db.Delete(&account).Error; err != nil {
 		logger.Errorf("Failed deleting account: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 
@@ -112,7 +112,7 @@ func (self *RestEndpoint) getAccount(w http.ResponseWriter, req *http.Request) {
 			return
 		} else if res.Error != nil {
 			logger.Errorf("Failed finding account: %v", res.Error)
-			w.WriteHeader(http.StatusInternalServerError)
+			sendInternalServerError(w)
 			return
 		}
 	}
@@ -136,7 +136,7 @@ func (self *RestEndpoint) getAccounts(w http.ResponseWriter, req *http.Request) 
 	res := self.db.Where(searchFor).Find(&accounts)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all accounts: %v", res.Error)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 

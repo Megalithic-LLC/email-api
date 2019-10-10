@@ -55,7 +55,7 @@ func (self *AuthenticationMiddleware) Middleware(next http.Handler) http.Handler
 			bearerTokenString := authHeader[7:]
 			if _, err := self.redisClient.Get(fmt.Sprintf("tok:%s", bearerTokenString)).Result(); err != nil {
 				logger.Errorf("Failed looking up token: %v", err)
-				w.WriteHeader(http.StatusInternalServerError)
+				sendInternalServerError(w)
 				return
 			}
 			bearerToken, err := parseTokenString(bearerTokenString)

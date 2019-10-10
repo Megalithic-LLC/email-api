@@ -77,7 +77,7 @@ func (self *RestEndpoint) deleteSnapshot(w http.ResponseWriter, req *http.Reques
 			return
 		} else if res.Error != nil {
 			logger.Errorf("Failed finding snapshot: %v", res.Error)
-			w.WriteHeader(http.StatusInternalServerError)
+			sendInternalServerError(w)
 			return
 		}
 	}
@@ -85,7 +85,7 @@ func (self *RestEndpoint) deleteSnapshot(w http.ResponseWriter, req *http.Reques
 	// Delete
 	if err := self.db.Delete(&snapshot).Error; err != nil {
 		logger.Errorf("Failed deleting snapshot: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		sendInternalServerError(w)
 		return
 	}
 

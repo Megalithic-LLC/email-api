@@ -5,6 +5,7 @@ var (
 		&Account{},
 		&Agent{},
 		&Domain{},
+		&Endpoint{},
 		&Plan{},
 		&Service{},
 		&ServiceInstance{},

@@ -11,6 +11,7 @@ type ServiceInstance struct {
 	ServiceID       string     `json:"service" gorm:"type:char(20);index"`
 	AccountIDs      []string   `json:"accounts" gorm:"-"`
 	DomainIDs       []string   `json:"domains" gorm:"-"`
+	EndpointIDs     []string   `json:"endpoints" gorm:"-"`
 	PlanID          string     `json:"plan" gorm:"type:char(20);index"`
 	CreatedByUserID string     `json:"createdBy" gorm:"type:char(20)"`
 	CreatedAt       time.Time  `json:"createdAt"`
