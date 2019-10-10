@@ -6,7 +6,7 @@ import (
 )
 
 func (self *AgentStream) SendGetDomainsResponse(requestId uint64, domains []model.Domain) error {
-	getDomainsRes := emailproto.ServerMessage{
+	res := emailproto.ServerMessage{
 		Id: requestId,
 		MessageType: &emailproto.ServerMessage_GetDomainsResponse{
 			GetDomainsResponse: &emailproto.GetDomainsResponse{
@@ -14,5 +14,5 @@ func (self *AgentStream) SendGetDomainsResponse(requestId uint64, domains []mode
 			},
 		},
 	}
-	return self.SendResponse(getDomainsRes)
+	return self.SendResponse(res)
 }

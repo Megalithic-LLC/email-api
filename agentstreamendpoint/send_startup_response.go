@@ -11,7 +11,7 @@ func (self *AgentStream) SendStartupResponse(requestId uint64) error {
 		return err
 	}
 
-	startupRes := emailproto.ServerMessage{
+	res := emailproto.ServerMessage{
 		Id: requestId,
 		MessageType: &emailproto.ServerMessage_StartupResponse{
 			StartupResponse: &emailproto.StartupResponse{
@@ -19,5 +19,5 @@ func (self *AgentStream) SendStartupResponse(requestId uint64) error {
 			},
 		},
 	}
-	return self.SendResponse(startupRes)
+	return self.SendResponse(res)
 }

@@ -51,6 +51,7 @@ func (self *RestEndpoint) createServiceInstance(w http.ResponseWriter, req *http
 		Protocol:          "imap",
 		Type:              "tcp",
 		Port:              8143,
+		Enabled:           true,
 		CreatedByUserID:   currentUserID,
 	}
 
@@ -60,6 +61,7 @@ func (self *RestEndpoint) createServiceInstance(w http.ResponseWriter, req *http
 		ServiceInstanceID: serviceInstance.ID,
 		Protocol:          "lmtp",
 		Type:              "unix",
+		Enabled:           true,
 		CreatedByUserID:   currentUserID,
 	}
 
@@ -70,6 +72,7 @@ func (self *RestEndpoint) createServiceInstance(w http.ResponseWriter, req *http
 		Protocol:          "smtp",
 		Type:              "tcp",
 		Port:              8025,
+		Enabled:           true,
 		CreatedByUserID:   currentUserID,
 	}
 
@@ -80,6 +83,7 @@ func (self *RestEndpoint) createServiceInstance(w http.ResponseWriter, req *http
 		Protocol:          "submission",
 		Type:              "tcp",
 		Port:              8587,
+		Enabled:           true,
 		CreatedByUserID:   currentUserID,
 	}
 

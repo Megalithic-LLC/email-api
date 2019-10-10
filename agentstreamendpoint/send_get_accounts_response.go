@@ -6,7 +6,7 @@ import (
 )
 
 func (self *AgentStream) SendGetAccountsResponse(requestId uint64, accounts []model.Account) error {
-	getAccountsRes := emailproto.ServerMessage{
+	res := emailproto.ServerMessage{
 		Id: requestId,
 		MessageType: &emailproto.ServerMessage_GetAccountsResponse{
 			GetAccountsResponse: &emailproto.GetAccountsResponse{
@@ -14,5 +14,5 @@ func (self *AgentStream) SendGetAccountsResponse(requestId uint64, accounts []mo
 			},
 		},
 	}
-	return self.SendResponse(getAccountsRes)
+	return self.SendResponse(res)
 }

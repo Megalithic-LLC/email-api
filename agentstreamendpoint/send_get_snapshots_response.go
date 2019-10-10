@@ -6,7 +6,7 @@ import (
 )
 
 func (self *AgentStream) SendGetSnapshotsResponse(requestId uint64, snapshots []model.Snapshot) error {
-	getSnapshotsRes := emailproto.ServerMessage{
+	res := emailproto.ServerMessage{
 		Id: requestId,
 		MessageType: &emailproto.ServerMessage_GetSnapshotsResponse{
 			GetSnapshotsResponse: &emailproto.GetSnapshotsResponse{
@@ -14,5 +14,5 @@ func (self *AgentStream) SendGetSnapshotsResponse(requestId uint64, snapshots []
 			},
 		},
 	}
-	return self.SendResponse(getSnapshotsRes)
+	return self.SendResponse(res)
 }

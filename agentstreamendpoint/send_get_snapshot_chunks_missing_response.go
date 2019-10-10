@@ -5,7 +5,7 @@ import (
 )
 
 func (self *AgentStream) SendGetSnapshotChunksMissingResponse(requestId uint64, chunks []uint32) error {
-	getSnapshotChunksMissingRes := emailproto.ServerMessage{
+	res := emailproto.ServerMessage{
 		Id: requestId,
 		MessageType: &emailproto.ServerMessage_GetSnapshotChunksMissingResponse{
 			GetSnapshotChunksMissingResponse: &emailproto.GetSnapshotChunksMissingResponse{
@@ -13,5 +13,5 @@ func (self *AgentStream) SendGetSnapshotChunksMissingResponse(requestId uint64, 
 			},
 		},
 	}
-	return self.SendResponse(getSnapshotChunksMissingRes)
+	return self.SendResponse(res)
 }

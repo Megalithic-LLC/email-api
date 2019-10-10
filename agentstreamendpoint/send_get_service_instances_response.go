@@ -6,7 +6,7 @@ import (
 )
 
 func (self *AgentStream) SendGetServiceInstancesResponse(requestId uint64, serviceInstances []model.ServiceInstance) error {
-	getServiceInstancesRes := emailproto.ServerMessage{
+	res := emailproto.ServerMessage{
 		Id: requestId,
 		MessageType: &emailproto.ServerMessage_GetServiceInstancesResponse{
 			GetServiceInstancesResponse: &emailproto.GetServiceInstancesResponse{
@@ -14,5 +14,5 @@ func (self *AgentStream) SendGetServiceInstancesResponse(requestId uint64, servi
 			},
 		},
 	}
-	return self.SendResponse(getServiceInstancesRes)
+	return self.SendResponse(res)
 }
