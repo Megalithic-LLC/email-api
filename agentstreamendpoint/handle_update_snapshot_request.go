@@ -13,11 +13,11 @@ const (
 	chunkSize = uint32(1000000)
 )
 
-func (self *AgentStream) handleSetSnapshotProgressRequest(requestId uint64, setSnapshotProgressReq emailproto.SetSnapshotProgressRequest) {
-	logger.Tracef("AgentStream:handleSetSnapshotProgressRequest(%d)", requestId)
+func (self *AgentStream) handleUpdateSnapshotRequest(requestId uint64, updateSnapshotReq emailproto.UpdateSnapshotRequest) {
+	logger.Tracef("AgentStream:handleUpdateSnapshotRequest(%d)", requestId)
 
 	snapshot := model.Snapshot{}
-	searchFor := &model.Snapshot{AgentID: self.agentID, ID: setSnapshotProgressReq.SnapshotId}
+	searchFor := &model.Snapshot{AgentID: self.agentID, ID: updateSnapshotReq.Snapshot.Id}
 	if err := self.endpoint.db.Where(searchFor).Limit(1).First(&snapshot).Error; err != nil {
 		logger.Errorf("Failed loading snapshot: %v", err)
 		self.SendErrorResponse(requestId, err)
@@ -26,13 +26,10 @@ func (self *AgentStream) handleSetSnapshotProgressRequest(requestId uint64, setS
 
 	prevSize := snapshot.Size
 
-	updates := model.Snapshot{
-		Progress: setSnapshotProgressReq.Progress,
-		Size:     setSnapshotProgressReq.Size,
-	}
+	updates := SnapshotFromProtobuf(updateSnapshotReq.Snapshot)
 
-	if err := self.endpoint.db.Model(&snapshot).Updates(&updates).Error; err != nil {
-		logger.Errorf("Failed updating snapshot with progress: %v", err)
+	if err := self.endpoint.db.Model(&snapshot).Updates(updates).Error; err != nil {
+		logger.Errorf("Failed updating snapshot : %v", err)
 		self.SendErrorResponse(requestId, err)
 		return
 	}

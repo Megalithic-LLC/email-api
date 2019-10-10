@@ -34,13 +34,13 @@ func (self *AgentStream) route(message emailproto.ClientMessage) {
 		setSnapshotChunkRequest := message.GetSetSnapshotChunkRequest()
 		self.handleSetSnapshotChunkRequest(message.Id, *setSnapshotChunkRequest)
 
-	case *emailproto.ClientMessage_SetSnapshotProgressRequest:
-		setSnapshotProgressRequest := message.GetSetSnapshotProgressRequest()
-		self.handleSetSnapshotProgressRequest(message.Id, *setSnapshotProgressRequest)
-
 	case *emailproto.ClientMessage_StartupRequest:
 		startupRequest := message.GetStartupRequest()
 		self.handleStartupRequest(message.Id, *startupRequest)
+
+	case *emailproto.ClientMessage_UpdateSnapshotRequest:
+		updateSnapshotRequest := message.GetUpdateSnapshotRequest()
+		self.handleUpdateSnapshotRequest(message.Id, *updateSnapshotRequest)
 
 	}
 }

@@ -10,6 +10,7 @@ type Snapshot struct {
 	ID              string     `json:"id" gorm:"primary_key;type:char(20)"`
 	AgentID         string     `json:"agent" gorm:"type:char(20);index"`
 	Name            string     `json:"name" gorm:"type:varchar(100);index"`
+	Engine          string     `json:"engine" gorm:"size:25"`
 	Progress        float32    `json:"progress"`
 	Size            uint64     `json:"size"`
 	CreatedByUserID string     `json:"createdBy" gorm:"type:char(20)"`
@@ -23,6 +24,7 @@ func (self Snapshot) Hash() []byte {
 	hasher.Write([]byte(self.ID))
 	hasher.Write([]byte(self.AgentID))
 	hasher.Write([]byte(self.Name))
+	hasher.Write([]byte(self.Engine))
 	hasher.Write([]byte(fmt.Sprintf("%v", self.Size)))
 	hasher.Write([]byte(self.CreatedByUserID))
 
