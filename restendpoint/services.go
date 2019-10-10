@@ -86,7 +86,7 @@ func (self *RestEndpoint) getServices(w http.ResponseWriter, req *http.Request) 
 
 func (self *RestEndpoint) loadServicePlans(service model.Service) (*serviceResType, error) {
 	var plans []model.Plan
-	searchFor := &model.Plan{ServiceID: service.ID}
+	searchFor := &model.Plan{ServiceID: service.ID, Visible: true}
 	if err := self.db.Where(searchFor).Find(&plans).Error; err != nil {
 		logger.Errorf("Failed loading plans for service: %v", err)
 		return nil, err

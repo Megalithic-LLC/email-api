@@ -41,7 +41,7 @@ func (self *RestEndpoint) getPlans(w http.ResponseWriter, req *http.Request) {
 
 	// Find
 	plans := []model.Plan{}
-	searchFor := &model.Plan{}
+	searchFor := &model.Plan{Visible: true}
 	res := self.db.Where(searchFor).Find(&plans)
 	if res.Error != nil {
 		logger.Errorf("Failed finding all plans: %v", res.Error)

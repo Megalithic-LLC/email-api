@@ -3,5 +3,6 @@
   "name": "business",
   "displayName": "Business",
   "description": "The business plan is for production use.",
-  "free": true
+  "free": true,
+  "visible": false
 }
