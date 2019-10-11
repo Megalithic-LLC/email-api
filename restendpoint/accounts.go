@@ -159,14 +159,6 @@ func (self *RestEndpoint) validateAccount(account *model.Account) ([]JsonApiErro
 		}
 		errs = append(errs, err)
 	}
-	if account.ServiceInstanceID == "" {
-		err := JsonApiError{
-			Status: fmt.Sprintf("%d", http.StatusBadRequest),
-			Title:  "Validation Error",
-			Detail: "A service instance id is required",
-		}
-		errs = append(errs, err)
-	}
 	if account.Email == "" {
 		err := JsonApiError{
 			Status: fmt.Sprintf("%d", http.StatusBadRequest),

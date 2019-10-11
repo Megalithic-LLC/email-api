@@ -7,13 +7,13 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/on-prem-net/email-api/agentstreamendpoint"
-	"github.com/on-prem-net/email-api/restendpoint"
 	"github.com/docktermj/go-logger/logger"
 	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/karlkfi/inject"
+	"github.com/on-prem-net/email-api/agentstreamendpoint"
+	"github.com/on-prem-net/email-api/restendpoint"
 )
 
 var (
@@ -26,7 +26,6 @@ var (
 	privateFs                http.FileSystem
 	redisClient              *redis.Client
 	restEndpoint             *restendpoint.RestEndpoint
-	serviceImporter          *ServiceImporter
 )
 
 func init() {
@@ -42,7 +41,6 @@ func main() {
 	graph.Define(&privateFs, inject.NewAutoProvider(newPrivateFs))
 	graph.Define(&redisClient, inject.NewAutoProvider(newRedisClient))
 	graph.Define(&restEndpoint, inject.NewAutoProvider(restendpoint.New))
-	graph.Define(&serviceImporter, inject.NewAutoProvider(newServiceImporter))
 	graph.ResolveAll()
 
 	logger.Info("On-Prem Admin API started")

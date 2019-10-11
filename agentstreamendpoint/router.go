@@ -22,10 +22,6 @@ func (self *AgentStream) route(message emailproto.ClientMessage) {
 		getEndpointsRequest := message.GetGetEndpointsRequest()
 		self.handleGetEndpointsRequest(message.Id, *getEndpointsRequest)
 
-	case *emailproto.ClientMessage_GetServiceInstancesRequest:
-		getServiceInstancesRequest := message.GetGetServiceInstancesRequest()
-		self.handleGetServiceInstancesRequest(message.Id, *getServiceInstancesRequest)
-
 	case *emailproto.ClientMessage_GetSnapshotChunksMissingRequest:
 		getSnapshotChunksMissingRequest := message.GetGetSnapshotChunksMissingRequest()
 		self.handleGetSnapshotChunksMissingRequest(message.Id, *getSnapshotChunksMissingRequest)

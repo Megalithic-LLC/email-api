@@ -63,17 +63,6 @@ func New(
 	router.HandleFunc("/v1/endpoints/{id}", self.deleteEndpoint).Methods("DELETE")
 	router.HandleFunc("/v1/endpoints/{id}", self.getEndpoint).Methods("GET")
 
-	router.HandleFunc("/v1/plans", self.getPlans).Methods("GET")
-	router.HandleFunc("/v1/plans/{id}", self.getPlan).Methods("GET")
-
-	router.HandleFunc("/v1/services", self.getServices).Methods("GET")
-	router.HandleFunc("/v1/services/{id}", self.getService).Methods("GET")
-
-	router.HandleFunc("/v1/serviceInstances", self.getServiceInstances).Methods("GET")
-	router.HandleFunc("/v1/serviceInstances", self.createServiceInstance).Methods("POST")
-	router.HandleFunc("/v1/serviceInstances/{id}", self.deleteServiceInstance).Methods("DELETE")
-	router.HandleFunc("/v1/serviceInstances/{id}", self.getServiceInstance).Methods("GET")
-
 	router.HandleFunc("/v1/snapshots", self.getSnapshots).Methods("GET")
 	router.HandleFunc("/v1/snapshots", self.createSnapshot).Methods("POST")
 	router.HandleFunc("/v1/snapshots/{id}", self.deleteSnapshot).Methods("DELETE")

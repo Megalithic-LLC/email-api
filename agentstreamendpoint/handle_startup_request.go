@@ -1,6 +1,8 @@
 package agentstreamendpoint
 
 import (
+	"errors"
+
 	"github.com/docktermj/go-logger/logger"
 	"github.com/on-prem-net/email-api/agentstreamendpoint/emailproto"
 	"github.com/on-prem-net/email-api/model"
@@ -8,6 +10,12 @@ import (
 
 func (self *AgentStream) handleStartupRequest(requestId uint64, startupReq emailproto.StartupRequest) {
 	logger.Tracef("AgentStream:handleStartupRequest(%d)", requestId)
+
+	// This API service is specific to the email agent
+	if startupReq.ServiceId != "blmkmfd5jj89vu275l5g" {
+		logger.Errorf("Agent is trying to connect for some other service %s", startupReq.ServiceId)
+		self.SendErrorResponse(requestId, errors.New("This API service only handles email agents"))
+	}
 
 	// See if this agent is known
 	var agent model.Agent

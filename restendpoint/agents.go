@@ -130,9 +130,23 @@ func (self *RestEndpoint) getAgent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Load related service instances
-	if err := self.loadServiceInstances(&agent); err != nil {
-		logger.Errorf("Failed loading service instances for agent: %v", err)
+	// Load related accounts
+	if err := self.loadAccounts(&agent); err != nil {
+		logger.Errorf("Failed loading accounts for agent: %v", err)
+		sendInternalServerError(w)
+		return
+	}
+
+	// Load related domains
+	if err := self.loadDomains(&agent); err != nil {
+		logger.Errorf("Failed loading domains for agent: %v", err)
+		sendInternalServerError(w)
+		return
+	}
+
+	// Load related endpoints
+	if err := self.loadEndpoints(&agent); err != nil {
+		logger.Errorf("Failed loading endpoints for agent: %v", err)
 		sendInternalServerError(w)
 		return
 	}
@@ -166,10 +180,28 @@ func (self *RestEndpoint) getAgents(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Load related service instances
+	// Load related accounts
 	for _, agent := range agents {
-		if err := self.loadServiceInstances(agent); err != nil {
-			logger.Errorf("Failed loading service instances for agent: %v", res.Error)
+		if err := self.loadAccounts(agent); err != nil {
+			logger.Errorf("Failed loading accounts for agent: %v", res.Error)
+			sendInternalServerError(w)
+			return
+		}
+	}
+
+	// Load related domains
+	for _, agent := range agents {
+		if err := self.loadDomains(agent); err != nil {
+			logger.Errorf("Failed loading domains for agent: %v", res.Error)
+			sendInternalServerError(w)
+			return
+		}
+	}
+
+	// Load related endpoints
+	for _, agent := range agents {
+		if err := self.loadEndpoints(agent); err != nil {
+			logger.Errorf("Failed loading endpoints for agent: %v", res.Error)
 			sendInternalServerError(w)
 			return
 		}
@@ -193,16 +225,44 @@ func (self *RestEndpoint) getAgents(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (self *RestEndpoint) loadServiceInstances(agent *model.Agent) error {
-	var snapshots []model.ServiceInstance
-	searchFor := &model.ServiceInstance{AgentID: agent.ID}
-	if err := self.db.Where(searchFor).Find(&snapshots).Error; err != nil {
-		logger.Errorf("Failed loading service instances for agent: %v", err)
+func (self *RestEndpoint) loadAccounts(agent *model.Agent) error {
+	var accounts []model.Account
+	searchFor := &model.Account{AgentID: agent.ID}
+	if err := self.db.Where(searchFor).Find(&accounts).Error; err != nil {
+		logger.Errorf("Failed loading accounts for service instance: %v", err)
 		return err
 	}
-	agent.ServiceInstanceIDs = []string{}
-	for _, serviceInstance := range snapshots {
-		agent.ServiceInstanceIDs = append(agent.ServiceInstanceIDs, serviceInstance.ID)
+	agent.AccountIDs = []string{}
+	for _, account := range accounts {
+		agent.AccountIDs = append(agent.AccountIDs, account.ID)
+	}
+	return nil
+}
+
+func (self *RestEndpoint) loadDomains(agent *model.Agent) error {
+	var domains []model.Domain
+	searchFor := &model.Domain{AgentID: agent.ID}
+	if err := self.db.Where(searchFor).Find(&domains).Error; err != nil {
+		logger.Errorf("Failed loading domains for service instance: %v", err)
+		return err
+	}
+	agent.DomainIDs = []string{}
+	for _, domain := range domains {
+		agent.DomainIDs = append(agent.DomainIDs, domain.ID)
+	}
+	return nil
+}
+
+func (self *RestEndpoint) loadEndpoints(agent *model.Agent) error {
+	var endpoints []model.Endpoint
+	searchFor := &model.Endpoint{AgentID: agent.ID}
+	if err := self.db.Where(searchFor).Find(&endpoints).Error; err != nil {
+		logger.Errorf("Failed loading endpoints for service instance: %v", err)
+		return err
+	}
+	agent.EndpointIDs = []string{}
+	for _, endpoint := range endpoints {
+		agent.EndpointIDs = append(agent.EndpointIDs, endpoint.ID)
 	}
 	return nil
 }

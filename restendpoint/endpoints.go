@@ -162,14 +162,6 @@ func (self *RestEndpoint) validateEndpoint(endpoint *model.Endpoint) ([]JsonApiE
 		}
 		errs = append(errs, err)
 	}
-	if endpoint.ServiceInstanceID == "" {
-		err := JsonApiError{
-			Status: fmt.Sprintf("%d", http.StatusBadRequest),
-			Title:  "Validation Error",
-			Detail: "A service instance id is required",
-		}
-		errs = append(errs, err)
-	}
 	protocolIsValid := false
 	for _, protocol := range validEndpointProtocols {
 		if protocol == endpoint.Protocol {

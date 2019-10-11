@@ -157,14 +157,6 @@ func (self *RestEndpoint) validateDomain(domain *model.Domain) ([]JsonApiError, 
 		}
 		errs = append(errs, err)
 	}
-	if domain.ServiceInstanceID == "" {
-		err := JsonApiError{
-			Status: fmt.Sprintf("%d", http.StatusBadRequest),
-			Title:  "Validation Error",
-			Detail: "A service instance id is required",
-		}
-		errs = append(errs, err)
-	}
 	if domain.Name == "" {
 		err := JsonApiError{
 			Status: fmt.Sprintf("%d", http.StatusBadRequest),
