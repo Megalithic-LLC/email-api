@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/on-prem-net/email-api/model"
+	"github.com/rs/xid"
 )
 
 func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) {
@@ -84,15 +85,94 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	// Create agent
+	imapEndpoint := model.Endpoint{
+		ID:              xid.New().String(),
+		AgentID:         agentID,
+		Protocol:        "imap",
+		Type:            "tcp",
+		Port:            8143,
+		Enabled:         true,
+		CreatedByUserID: currentUserID,
+	}
+
+	lmtpEndpoint := model.Endpoint{
+		ID:              xid.New().String(),
+		AgentID:         agentID,
+		Protocol:        "lmtp",
+		Type:            "unix",
+		Enabled:         true,
+		CreatedByUserID: currentUserID,
+	}
+
+	smtpEndpoint := model.Endpoint{
+		ID:              xid.New().String(),
+		AgentID:         agentID,
+		Protocol:        "smtp",
+		Type:            "tcp",
+		Port:            8025,
+		Enabled:         true,
+		CreatedByUserID: currentUserID,
+	}
+
+	submissionEndpoint := model.Endpoint{
+		ID:              xid.New().String(),
+		AgentID:         agentID,
+		Protocol:        "submission",
+		Type:            "tcp",
+		Port:            8587,
+		Enabled:         true,
+		CreatedByUserID: currentUserID,
+	}
+
+	// Store
+	tx := self.db.Begin()
+	defer tx.Rollback()
 	agent := model.Agent{
 		ID:              agentID,
 		CreatedByUserID: currentUserID,
 	}
-	if err := self.db.Create(&agent).Error; err != nil {
+	if err := tx.Create(&agent).Error; err != nil {
 		logger.Errorf("Failed creating new agent: %v", err)
+		tx.Rollback()
 		sendInternalServerError(w)
 		return
+	}
+	if err := tx.Create(&imapEndpoint).Error; err != nil {
+		logger.Errorf("Failed creating default imap endpoint for new agent: %v", err)
+		tx.Rollback()
+		sendInternalServerError(w)
+		return
+	}
+	if err := tx.Create(&lmtpEndpoint).Error; err != nil {
+		logger.Errorf("Failed creating default lmtp endpoint for new agent: %v", err)
+		tx.Rollback()
+		sendInternalServerError(w)
+		return
+	}
+	if err := tx.Create(&smtpEndpoint).Error; err != nil {
+		logger.Errorf("Failed creating default smtp endpoint for new agent: %v", err)
+		tx.Rollback()
+		sendInternalServerError(w)
+		return
+	}
+	if err := tx.Create(&submissionEndpoint).Error; err != nil {
+		logger.Errorf("Failed creating default smtp submission endpoint for new agent: %v", err)
+		tx.Rollback()
+		sendInternalServerError(w)
+		return
+	}
+	if err := tx.Commit().Error; err != nil {
+		logger.Errorf("Failed creating new agent: %v", err)
+		tx.Rollback()
+		sendInternalServerError(w)
+		return
+	}
+
+	agent.EndpointIDs = []string{
+		imapEndpoint.ID,
+		lmtpEndpoint.ID,
+		smtpEndpoint.ID,
+		submissionEndpoint.ID,
 	}
 
 	// Remove unclaimed agent reference
