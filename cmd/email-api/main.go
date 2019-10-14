@@ -12,8 +12,8 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/karlkfi/inject"
-	"github.com/on-prem-net/email-api/agentstreamendpoint"
-	"github.com/on-prem-net/email-api/restendpoint"
+	"github.com/Megalithic-LLC/on-prem-email-api/agentstreamendpoint"
+	"github.com/Megalithic-LLC/on-prem-email-api/restendpoint"
 )
 
 var (

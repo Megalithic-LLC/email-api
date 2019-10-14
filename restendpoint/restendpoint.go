@@ -10,7 +10,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
-	"github.com/on-prem-net/email-api/agentstreamendpoint"
+	"github.com/Megalithic-LLC/on-prem-email-api/agentstreamendpoint"
 )
 
 type RestEndpoint struct {

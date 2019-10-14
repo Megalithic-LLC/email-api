@@ -25,7 +25,7 @@
 #   unused-packages = true
 
 [metadata.heroku]
-  root-package = "github.com/on-prem-net/email-api"
+  root-package = "github.com/Megalithic-LLC/on-prem-email-api"
   go-version = "1.11"
   install = ["./..."]
 

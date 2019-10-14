@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/docktermj/go-logger/logger"
-	"github.com/on-prem-net/email-api/agentstreamendpoint/emailproto"
-	"github.com/on-prem-net/email-api/model"
+	"github.com/Megalithic-LLC/on-prem-email-api/agentstreamendpoint/emailproto"
+	"github.com/Megalithic-LLC/on-prem-email-api/model"
 )
 
 func (self *AgentStream) handleGetSnapshotChunksMissingRequest(requestId uint64, getSnapshotChunksMissingReq emailproto.GetSnapshotChunksMissingRequest) {

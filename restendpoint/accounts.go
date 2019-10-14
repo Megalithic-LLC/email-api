@@ -10,7 +10,7 @@ import (
 	"github.com/docktermj/go-logger/logger"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"github.com/on-prem-net/email-api/model"
+	"github.com/Megalithic-LLC/on-prem-email-api/model"
 	"github.com/rs/xid"
 )
 

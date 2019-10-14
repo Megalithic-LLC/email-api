@@ -1,8 +1,8 @@
 package agentstreamendpoint
 
 import (
-	"github.com/on-prem-net/email-api/agentstreamendpoint/emailproto"
-	"github.com/on-prem-net/email-api/model"
+	"github.com/Megalithic-LLC/on-prem-email-api/agentstreamendpoint/emailproto"
+	"github.com/Megalithic-LLC/on-prem-email-api/model"
 )
 
 func (self *AgentStream) SendGetEndpointsResponse(requestId uint64, endpoints []model.Endpoint) error {

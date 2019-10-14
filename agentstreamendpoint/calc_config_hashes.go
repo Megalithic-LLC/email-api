@@ -3,7 +3,7 @@ package agentstreamendpoint
 import (
 	"crypto/md5"
 
-	"github.com/on-prem-net/email-api/model"
+	"github.com/Megalithic-LLC/on-prem-email-api/model"
 )
 
 func (self *AgentStream) calcConfigHashes() (map[string][]byte, error) {

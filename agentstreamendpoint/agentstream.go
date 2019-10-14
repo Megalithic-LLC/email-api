@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/on-prem-net/email-api/agentstreamendpoint/emailproto"
+	"github.com/Megalithic-LLC/on-prem-email-api/agentstreamendpoint/emailproto"
 	"github.com/docktermj/go-logger/logger"
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"

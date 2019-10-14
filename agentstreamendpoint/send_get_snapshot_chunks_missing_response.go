@@ -1,7 +1,7 @@
 package agentstreamendpoint
 
 import (
-	"github.com/on-prem-net/email-api/agentstreamendpoint/emailproto"
+	"github.com/Megalithic-LLC/on-prem-email-api/agentstreamendpoint/emailproto"
 )
 
 func (self *AgentStream) SendGetSnapshotChunksMissingResponse(requestId uint64, chunks []uint32) error {

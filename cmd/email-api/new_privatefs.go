@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/docktermj/go-logger/logger"
-	_ "github.com/on-prem-net/email-api/statik"
+	_ "github.com/Megalithic-LLC/on-prem-email-api/statik"
 	"github.com/rakyll/statik/fs"
 )
 

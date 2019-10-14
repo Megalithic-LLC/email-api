@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/docktermj/go-logger/logger"
-	"github.com/on-prem-net/email-api/model"
+	"github.com/Megalithic-LLC/on-prem-email-api/model"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"golang.org/x/crypto/bcrypt"

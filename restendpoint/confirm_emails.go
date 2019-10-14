@@ -8,7 +8,7 @@ import (
 	"github.com/docktermj/go-logger/logger"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
-	"github.com/on-prem-net/email-api/model"
+	"github.com/Megalithic-LLC/on-prem-email-api/model"
 )
 
 func (self *RestEndpoint) getConfirmEmail(w http.ResponseWriter, req *http.Request) {

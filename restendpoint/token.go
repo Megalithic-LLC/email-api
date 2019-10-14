@@ -10,7 +10,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/docktermj/go-logger/logger"
 	"github.com/go-redis/redis"
-	"github.com/on-prem-net/email-api/model"
+	"github.com/Megalithic-LLC/on-prem-email-api/model"
 	"golang.org/x/crypto/bcrypt"
 )
 
