@@ -6,6 +6,7 @@ import (
 
 type Agent struct {
 	ID              string     `json:"id" gorm:"primary_key;type:char(20)"`
+	PlanID          string     `json:"plan" gorm:"type:char(20)"`
 	AccountIDs      []string   `json:"accounts" gorm:"-"`
 	DomainIDs       []string   `json:"domains" gorm:"-"`
 	EndpointIDs     []string   `json:"endpoints" gorm:"-"`

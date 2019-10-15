@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Megalithic-LLC/on-prem-email-api/agentstreamendpoint"
 	"github.com/docktermj/go-logger/logger"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
-	"github.com/Megalithic-LLC/on-prem-email-api/agentstreamendpoint"
 )
 
 type RestEndpoint struct {
@@ -62,6 +62,9 @@ func New(
 	router.HandleFunc("/v1/endpoints", self.createEndpoint).Methods("POST")
 	router.HandleFunc("/v1/endpoints/{id}", self.deleteEndpoint).Methods("DELETE")
 	router.HandleFunc("/v1/endpoints/{id}", self.getEndpoint).Methods("GET")
+
+	router.HandleFunc("/v1/plans", self.getPlans).Methods("GET")
+	router.HandleFunc("/v1/plans/{id}", self.getPlan).Methods("GET")
 
 	router.HandleFunc("/v1/snapshots", self.getSnapshots).Methods("GET")
 	router.HandleFunc("/v1/snapshots", self.createSnapshot).Methods("POST")

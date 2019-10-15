@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Megalithic-LLC/on-prem-email-api/model"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/docktermj/go-logger/logger"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"github.com/Megalithic-LLC/on-prem-email-api/model"
 	"github.com/rs/xid"
 )
 
@@ -26,24 +26,21 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 		sendBadRequestError(w, err)
 		return
 	}
-	agentID := createAgentRequest.Agent.ID
+	agent := createAgentRequest.Agent
 
-	// Validate unclaimed agent
-	isMember, err := self.redisClient.SIsMember("unclaimed-agents", agentID).Result()
-	if err != nil {
-		logger.Errorf("Failed looking up unclaimed agent: %v", err)
+	// Validate
+	if validationErrors, err := self.validateAgent(&agent); err != nil {
+		logger.Errorf("Failure validating domain: %v", err)
 		sendInternalServerError(w)
 		return
-	}
-	if !isMember {
-		logger.Warnf("Attempt to claim non-existent agent %v", agentID)
-		w.WriteHeader(http.StatusNotFound)
+	} else if len(validationErrors) > 0 {
+		sendErrors(w, validationErrors)
 		return
 	}
 
 	// Generate an agent token
 	currentUserID := context.Get(req, "currentUserID").(string)
-	tokenString, err := self.generateAgentTokenString(currentUserID, agentID)
+	tokenString, err := self.generateAgentTokenString(currentUserID, agent.ID)
 	if err != nil {
 		logger.Errorf("Failed generating token for agent: %v", err)
 		sendInternalServerError(w)
@@ -59,7 +56,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 	}
 
 	// Communicate the token to the agent, which it will need for future requests
-	agentStream := self.agentStreamEndpoint.FindAgentStream(agentID)
+	agentStream := self.agentStreamEndpoint.FindAgentStream(agent.ID)
 	if agentStream == nil {
 		if _, err := self.redisClient.Del(redisKey).Result(); err != nil {
 			logger.Errorf("Failed deleting agent token: %v", err)
@@ -87,7 +84,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 
 	imapEndpoint := model.Endpoint{
 		ID:              xid.New().String(),
-		AgentID:         agentID,
+		AgentID:         agent.ID,
 		Protocol:        "imap",
 		Type:            "tcp",
 		Port:            8143,
@@ -97,7 +94,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 
 	lmtpEndpoint := model.Endpoint{
 		ID:              xid.New().String(),
-		AgentID:         agentID,
+		AgentID:         agent.ID,
 		Protocol:        "lmtp",
 		Type:            "unix",
 		Enabled:         true,
@@ -106,7 +103,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 
 	smtpEndpoint := model.Endpoint{
 		ID:              xid.New().String(),
-		AgentID:         agentID,
+		AgentID:         agent.ID,
 		Protocol:        "smtp",
 		Type:            "tcp",
 		Port:            8025,
@@ -116,7 +113,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 
 	submissionEndpoint := model.Endpoint{
 		ID:              xid.New().String(),
-		AgentID:         agentID,
+		AgentID:         agent.ID,
 		Protocol:        "submission",
 		Type:            "tcp",
 		Port:            8587,
@@ -127,10 +124,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 	// Store
 	tx := self.db.Begin()
 	defer tx.Rollback()
-	agent := model.Agent{
-		ID:              agentID,
-		CreatedByUserID: currentUserID,
-	}
+	agent.CreatedByUserID = currentUserID
 	if err := tx.Create(&agent).Error; err != nil {
 		logger.Errorf("Failed creating new agent: %v", err)
 		tx.Rollback()
@@ -176,7 +170,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 	}
 
 	// Remove unclaimed agent reference
-	if _, err := self.redisClient.SRem("unclaimed-agents", agentID).Result(); err != nil {
+	if _, err := self.redisClient.SRem("unclaimed-agents", agent.ID).Result(); err != nil {
 		logger.Errorf("Failed removing unclaimed agent: %v", err)
 	}
 
@@ -371,4 +365,39 @@ func (self *RestEndpoint) generateAgentTokenString(agentID, userID string) (stri
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtSecret)
+}
+
+func (self *RestEndpoint) validateAgent(agent *model.Agent) ([]JsonApiError, error) {
+	errs := []JsonApiError{}
+
+	if agent.PlanID == "" {
+		err := JsonApiError{
+			Status: fmt.Sprintf("%d", http.StatusBadRequest),
+			Title:  "Validation Error",
+			Detail: "A service plan is required",
+		}
+		errs = append(errs, err)
+	}
+
+	if agent.ID == "" {
+		err := JsonApiError{
+			Status: fmt.Sprintf("%d", http.StatusBadRequest),
+			Title:  "Validation Error",
+			Detail: "An Agent ID is required; obtain one from the agent startup log",
+		}
+		errs = append(errs, err)
+	} else { // Validate unclaimed agent
+		if isMember, err := self.redisClient.SIsMember("unclaimed-agents", agent.ID).Result(); err != nil {
+			return nil, err
+		} else if !isMember {
+			err := JsonApiError{
+				Status: fmt.Sprintf("%d", http.StatusBadRequest),
+				Title:  "Validation Error",
+				Detail: fmt.Sprintf("Attempt to claim non-existent agent %v", agent.ID),
+			}
+			errs = append(errs, err)
+		}
+	}
+
+	return errs, nil
 }

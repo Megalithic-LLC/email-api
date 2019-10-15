@@ -6,6 +6,7 @@ var (
 		&Agent{},
 		&Domain{},
 		&Endpoint{},
+		&Plan{},
 		&Snapshot{},
 		&SnapshotChunk{},
 		&User{},

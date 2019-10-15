@@ -7,13 +7,13 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/Megalithic-LLC/on-prem-email-api/agentstreamendpoint"
+	"github.com/Megalithic-LLC/on-prem-email-api/restendpoint"
 	"github.com/docktermj/go-logger/logger"
 	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/karlkfi/inject"
-	"github.com/Megalithic-LLC/on-prem-email-api/agentstreamendpoint"
-	"github.com/Megalithic-LLC/on-prem-email-api/restendpoint"
 )
 
 var (
@@ -23,6 +23,7 @@ var (
 	agentStreamEndpoint      *agentstreamendpoint.AgentStreamEndpoint
 	authenticationMiddleware *restendpoint.AuthenticationMiddleware
 	db                       *gorm.DB
+	planImporter             *PlanImporter
 	privateFs                http.FileSystem
 	redisClient              *redis.Client
 	restEndpoint             *restendpoint.RestEndpoint
@@ -38,6 +39,7 @@ func main() {
 	graph.Define(&agentStreamEndpoint, inject.NewAutoProvider(agentstreamendpoint.New))
 	graph.Define(&authenticationMiddleware, inject.NewAutoProvider(restendpoint.NewAuthenticationMiddleware))
 	graph.Define(&db, inject.NewAutoProvider(newDB))
+	graph.Define(&planImporter, inject.NewAutoProvider(newPlanImporter))
 	graph.Define(&privateFs, inject.NewAutoProvider(newPrivateFs))
 	graph.Define(&redisClient, inject.NewAutoProvider(newRedisClient))
 	graph.Define(&restEndpoint, inject.NewAutoProvider(restendpoint.New))
