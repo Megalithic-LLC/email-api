@@ -29,7 +29,6 @@ func newPlanImporter(db *gorm.DB, privatefs http.FileSystem) *PlanImporter {
 
 func (self PlanImporter) importPlans() error {
 	return fs.Walk(self.privatefs, "/plans", func(path string, fileInfo os.FileInfo, err error) error {
-		logger.Debugf("** A: %+v", path)
 		extension := filepath.Ext(fileInfo.Name())
 		if strings.HasPrefix(path, "/plans") && extension == ".json" && strings.Count(path, "/") == 2 {
 			contents, err := fs.ReadFile(self.privatefs, path)
