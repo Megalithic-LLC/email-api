@@ -51,6 +51,11 @@ func New(
 	router.HandleFunc("/v1/agents", self.createAgent).Methods("POST")
 	router.HandleFunc("/v1/agents/{id}", self.getAgent).Methods("GET")
 
+	router.HandleFunc("/v1/apiKeys", self.getApiKeys).Methods("GET")
+	router.HandleFunc("/v1/apiKeys", self.createApiKey).Methods("POST")
+	router.HandleFunc("/v1/apiKeys/{id}", self.deleteApiKey).Methods("DELETE")
+	router.HandleFunc("/v1/apiKeys/{id}", self.getApiKey).Methods("GET")
+
 	router.HandleFunc("/v1/confirmEmails/{id}", self.getConfirmEmail).Methods("GET")
 
 	router.HandleFunc("/v1/domains", self.getDomains).Methods("GET")

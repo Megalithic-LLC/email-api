@@ -30,7 +30,7 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 
 	// Validate
 	if validationErrors, err := self.validateAgent(&agent); err != nil {
-		logger.Errorf("Failure validating domain: %v", err)
+		logger.Errorf("Failure validating agent: %v", err)
 		sendInternalServerError(w)
 		return
 	} else if len(validationErrors) > 0 {

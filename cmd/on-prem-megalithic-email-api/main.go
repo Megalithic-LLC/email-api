@@ -45,7 +45,7 @@ func main() {
 	graph.Define(&restEndpoint, inject.NewAutoProvider(restendpoint.New))
 	graph.ResolveAll()
 
-	logger.Info("On-Prem Admin API started")
+	logger.Info("Megalithic Email API started")
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
