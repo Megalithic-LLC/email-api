@@ -83,7 +83,7 @@ func (self *AuthenticationMiddleware) Middleware(next http.Handler) http.Handler
 				context.Set(req, "currentUserID", apiKey.CreatedByUserID)
 				next.ServeHTTP(w, req)
 				return
-			} else if res.Error != nil {
+			} else if res.Error != nil && !res.RecordNotFound() {
 				logger.Errorf("Failed finding API Key: %v", res.Error)
 				sendInternalServerError(w)
 				return
