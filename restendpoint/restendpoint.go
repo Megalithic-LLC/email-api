@@ -50,6 +50,7 @@ func New(
 	router.HandleFunc("/v1/agents", self.getAgents).Methods("GET")
 	router.HandleFunc("/v1/agents", self.createAgent).Methods("POST")
 	router.HandleFunc("/v1/agents/{id}", self.getAgent).Methods("GET")
+	router.HandleFunc("/v1/agents/{id}", self.createAgent).Methods("PUT")
 
 	router.HandleFunc("/v1/apiKeys", self.getApiKeys).Methods("GET")
 	router.HandleFunc("/v1/apiKeys", self.createApiKey).Methods("POST")

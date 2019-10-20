@@ -16,6 +16,8 @@ import (
 func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) {
 	logger.Tracef("RestEndpoint:createAgent")
 
+	currentUserID := context.Get(req, "currentUserID").(string)
+
 	// Decode request
 	type createAgentRequestType struct {
 		Agent model.Agent `json:"agent"`
@@ -27,9 +29,12 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 	agent := createAgentRequest.Agent
+	if req.Method == http.MethodPut {
+		agent.ID = mux.Vars(req)["id"]
+	}
 
 	// Validate
-	if validationErrors, err := self.validateAgent(&agent); err != nil {
+	if validationErrors, err := self.validateAgent(&agent, req); err != nil {
 		logger.Errorf("Failure validating agent: %v", err)
 		sendInternalServerError(w)
 		return
@@ -38,48 +43,57 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	// Generate an agent token
-	currentUserID := context.Get(req, "currentUserID").(string)
-	tokenString, err := self.generateAgentTokenString(currentUserID, agent.ID)
-	if err != nil {
-		logger.Errorf("Failed generating token for agent: %v", err)
-		sendInternalServerError(w)
-		return
+	// In dev, we will perform communication with the agent directly.
+	// In production, the On-Prem cloud talks to agents, and it contacts
+	// us.
+	var isDevEnv bool
+	if req.Method == http.MethodPost {
+		isDevEnv = true
 	}
 
-	// Store the token
-	redisKey := fmt.Sprintf("tok:%v", tokenString)
-	if _, err := self.redisClient.Set(redisKey, "1", 0).Result(); err != nil {
-		logger.Errorf("Failed storing agent token: %v", err)
-		sendInternalServerError(w)
-		return
-	}
-
-	// Communicate the token to the agent, which it will need for future requests
-	agentStream := self.agentStreamEndpoint.FindAgentStream(agent.ID)
-	if agentStream == nil {
-		if _, err := self.redisClient.Del(redisKey).Result(); err != nil {
-			logger.Errorf("Failed deleting agent token: %v", err)
+	if isDevEnv {
+		// Generate an agent token
+		tokenString, err := self.generateAgentTokenString(currentUserID, agent.ID)
+		if err != nil {
+			logger.Errorf("Failed generating token for agent: %v", err)
+			sendInternalServerError(w)
+			return
 		}
-		sendErrors(w, []JsonApiError{
-			JsonApiError{
-				Status: fmt.Sprintf("%v", http.StatusNotFound),
-				Title:  "Agent Connection Failed",
-				Detail: "Failed contacting agent; make sure it is running and connected to the internet",
-			},
-		})
-		return
-	}
-	if _, err := agentStream.SendClaimRequest(tokenString); err != nil {
-		logger.Errorf("Failed claiming agent: %v", err)
-		sendErrors(w, []JsonApiError{
-			JsonApiError{
-				Status: fmt.Sprintf("%v", http.StatusInternalServerError),
-				Title:  "Claim Agent Failed",
-				Detail: "Failed claiming agent; make sure it is running and connected to the internet",
-			},
-		})
-		return
+
+		// Store the token
+		redisKey := fmt.Sprintf("tok:%v", tokenString)
+		if _, err := self.redisClient.Set(redisKey, "1", 0).Result(); err != nil {
+			logger.Errorf("Failed storing agent token: %v", err)
+			sendInternalServerError(w)
+			return
+		}
+
+		// Communicate the token to the agent, which it will need for future requests
+		agentStream := self.agentStreamEndpoint.FindAgentStream(agent.ID)
+		if agentStream == nil {
+			if _, err := self.redisClient.Del(redisKey).Result(); err != nil {
+				logger.Errorf("Failed deleting agent token: %v", err)
+			}
+			sendErrors(w, []JsonApiError{
+				JsonApiError{
+					Status: fmt.Sprintf("%v", http.StatusNotFound),
+					Title:  "Agent Connection Failed",
+					Detail: "Failed contacting agent; make sure it is running and connected to the internet",
+				},
+			})
+			return
+		}
+		if _, err := agentStream.SendClaimRequest(tokenString); err != nil {
+			logger.Errorf("Failed claiming agent: %v", err)
+			sendErrors(w, []JsonApiError{
+				JsonApiError{
+					Status: fmt.Sprintf("%v", http.StatusInternalServerError),
+					Title:  "Claim Agent Failed",
+					Detail: "Failed claiming agent; make sure it is running and connected to the internet",
+				},
+			})
+			return
+		}
 	}
 
 	imapEndpoint := model.Endpoint{
@@ -170,15 +184,23 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 	}
 
 	// Remove unclaimed agent reference
-	if _, err := self.redisClient.SRem("unclaimed-agents", agent.ID).Result(); err != nil {
-		logger.Errorf("Failed removing unclaimed agent: %v", err)
+	if isDevEnv {
+		if _, err := self.redisClient.SRem("unclaimed-agents", agent.ID).Result(); err != nil {
+			logger.Errorf("Failed removing unclaimed agent: %v", err)
+		} else {
+			logger.Debug("Removed unclaimed agent from Redis")
+		}
 	}
 
 	// Send result
 	result := map[string]interface{}{}
 	result["agent"] = agent
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	if req.Method == http.MethodPost {
+		w.WriteHeader(http.StatusCreated)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		logger.Errorf("Error encoding response: %v", err)
 	}
@@ -367,7 +389,7 @@ func (self *RestEndpoint) generateAgentTokenString(agentID, userID string) (stri
 	return token.SignedString(jwtSecret)
 }
 
-func (self *RestEndpoint) validateAgent(agent *model.Agent) ([]JsonApiError, error) {
+func (self *RestEndpoint) validateAgent(agent *model.Agent, req *http.Request) ([]JsonApiError, error) {
 	errs := []JsonApiError{}
 
 	if agent.PlanID == "" {
@@ -386,7 +408,7 @@ func (self *RestEndpoint) validateAgent(agent *model.Agent) ([]JsonApiError, err
 			Detail: "An Agent ID is required; obtain one from the agent startup log",
 		}
 		errs = append(errs, err)
-	} else { // Validate unclaimed agent
+	} else if req.Method == http.MethodPost { // Validate unclaimed agent in dev
 		if isMember, err := self.redisClient.SIsMember("unclaimed-agents", agent.ID).Result(); err != nil {
 			return nil, err
 		} else if !isMember {
