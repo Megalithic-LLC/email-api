@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Megalithic-LLC/on-prem-email-api/model"
 	"github.com/docktermj/go-logger/logger"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"github.com/Megalithic-LLC/on-prem-email-api/model"
 	"github.com/rs/xid"
 )
 
@@ -26,6 +26,9 @@ func (self *RestEndpoint) createSnapshot(w http.ResponseWriter, req *http.Reques
 		return
 	}
 	snapshot := createSnapshotRequest.Snapshot
+	if req.Method == http.MethodPut {
+		snapshot.ID = mux.Vars(req)["id"]
+	}
 
 	// Validate
 	if validationErrors, err := self.validateSnapshot(&snapshot); err != nil {
