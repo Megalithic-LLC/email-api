@@ -9,7 +9,7 @@ import (
 type Snapshot struct {
 	ID              string     `json:"id" gorm:"primary_key;type:char(20)"`
 	AgentID         string     `json:"agent" gorm:"type:char(20);index"`
-	ServiceID       string     `json:"sevice" gorm:"type:char(20)"`
+	ServiceID       string     `json:"service" gorm:"type:char(20)"`
 	Name            string     `json:"name" gorm:"type:varchar(100);index"`
 	Engine          string     `json:"engine" gorm:"size:25"`
 	Progress        float32    `json:"progress"`
