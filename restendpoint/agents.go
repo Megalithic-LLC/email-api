@@ -206,6 +206,55 @@ func (self *RestEndpoint) createAgent(w http.ResponseWriter, req *http.Request) 
 	}
 }
 
+func (self *RestEndpoint) deleteAgent(w http.ResponseWriter, req *http.Request) {
+	id := mux.Vars(req)["id"]
+	logger.Tracef("RestEndpoint:deleteAgent(%s)", id)
+
+	// Begin tx
+	tx := self.db.Begin()
+	defer tx.Rollback()
+
+	// Find
+	var agent model.Agent
+	{
+		searchFor := &model.Agent{ID: id}
+		if res := tx.Where(searchFor).Limit(1).First(&agent); res.RecordNotFound() {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		} else if res.Error != nil {
+			logger.Errorf("Failed finding agent: %v", res.Error)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Delete agent
+	if err := tx.Delete(&agent).Error; err != nil {
+		logger.Errorf("Failed deleting agent: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Delete endpoints
+	if err := tx.Where("agent_id=?", id).Delete(&model.Endpoint{}).Error; err != nil {
+		logger.Errorf("Failed deleting agent's endpoints: %v", err)
+		sendInternalServerError(w)
+		return
+	}
+
+	// Don't automatically delete snapshots; they're kept and can be used to hydrate new agents
+
+	// Commit tx
+	if err := tx.Commit().Error; err != nil {
+		logger.Errorf("Failed deleting agent: %v", err)
+		sendInternalServerError(w)
+		return
+	}
+
+	// Send result
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (self *RestEndpoint) getAgent(w http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	logger.Tracef("RestEndpoint:getAgent(%s)", id)

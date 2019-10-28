@@ -49,6 +49,7 @@ func New(
 
 	router.HandleFunc("/v1/agents", self.getAgents).Methods("GET")
 	router.HandleFunc("/v1/agents", self.createAgent).Methods("POST")
+	router.HandleFunc("/v1/agents/{id}", self.deleteAgent).Methods("DELETE")
 	router.HandleFunc("/v1/agents/{id}", self.getAgent).Methods("GET")
 	router.HandleFunc("/v1/agents/{id}", self.createAgent).Methods("PUT")
 
